@@ -6,7 +6,7 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-shadow_vote = "H6NrSVGXBpp5jdrEAaLHuWLsmPUhMt9yK2uujQotNmKU"
+genome_shield = "2NaVBnwtSzp32CMnhrZw8CWbhj4Ftx3u94zbkLptqbTP"
 
 [registry]
 url = "https://api.apr.dev"

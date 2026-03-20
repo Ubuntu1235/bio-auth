@@ -1,7 +1,7 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { PublicKey } from "@solana/web3.js";
-import { ShadowVote } from "../target/types/shadow_vote";
+import { GenomeShield } from "../target/types/genome_shield";
 import { randomBytes } from "crypto";
 import {
   awaitComputationFinalization,
@@ -27,11 +27,11 @@ import * as fs from "fs";
 import * as os from "os";
 import { expect } from "chai";
 
-describe("ShadowVote", () => {
+describe("GenomeShield", () => {
   // Configure the client to use the local cluster.
   anchor.setProvider(anchor.AnchorProvider.env());
   const program = anchor.workspace
-    .ShadowVote as Program<ShadowVote>;
+    .GenomeShield as Program<GenomeShield>;
   const provider = anchor.getProvider();
   const arciumProgram = getArciumProgram(provider as anchor.AnchorProvider);
 
@@ -127,7 +127,7 @@ describe("ShadowVote", () => {
   });
 
   async function initAddTogetherCompDef(
-    program: Program<ShadowVote>,
+    program: Program<GenomeShield>,
     owner: anchor.web3.Keypair,
   ): Promise<string> {
     const baseSeedCompDefAcc = getArciumAccountBaseSeed(

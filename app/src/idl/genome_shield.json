@@ -1,86 +1,23 @@
 {
-  "address": "H6NrSVGXBpp5jdrEAaLHuWLsmPUhMt9yK2uujQotNmKU",
+  "address": "2NaVBnwtSzp32CMnhrZw8CWbhj4Ftx3u94zbkLptqbTP",
   "metadata": {
-    "name": "shadow_vote",
+    "name": "genome_shield",
     "version": "0.1.0",
     "spec": "0.1.0",
     "description": "Created with Arcium & Anchor"
   },
   "instructions": [
     {
-      "name": "cast_and_tally_callback",
+      "name": "compute_similarity",
       "discriminator": [
-        201,
-        205,
-        135,
+        21,
+        80,
+        9,
+        136,
+        119,
+        150,
         60,
-        42,
-        59,
-        253,
-        190
-      ],
-      "accounts": [
-        {
-          "name": "arcium_program",
-          "address": "Arcj82pX7HxYKLR92qvgZUAd7vGS1k4hQvAFcPATFdEQ"
-        },
-        {
-          "name": "comp_def_account"
-        },
-        {
-          "name": "mxe_account"
-        },
-        {
-          "name": "computation_account"
-        },
-        {
-          "name": "cluster_account"
-        },
-        {
-          "name": "instructions_sysvar",
-          "address": "Sysvar1nstructions1111111111111111111111111"
-        },
-        {
-          "name": "vote_record",
-          "writable": true
-        },
-        {
-          "name": "proposal",
-          "writable": true
-        }
-      ],
-      "args": [
-        {
-          "name": "output",
-          "type": {
-            "defined": {
-              "name": "SignedComputationOutputs",
-              "generics": [
-                {
-                  "kind": "type",
-                  "type": {
-                    "defined": {
-                      "name": "CastAndTallyOutput"
-                    }
-                  }
-                }
-              ]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "cast_vote",
-      "discriminator": [
-        20,
-        212,
-        15,
-        189,
-        69,
-        180,
-        69,
-        151
+        210
       ],
       "accounts": [
         {
@@ -153,24 +90,23 @@
           "address": "7EbMUTLo5DjdzbN7s8BXeZwXzEwNQb1hScfRvWg8a6ot"
         },
         {
-          "name": "vote_record",
+          "name": "comparison_record",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "const",
                 "value": [
-                  118,
-                  111,
-                  116,
-                  101,
-                  95,
-                  114,
-                  101,
                   99,
                   111,
+                  109,
+                  112,
+                  97,
                   114,
-                  100
+                  105,
+                  115,
+                  111,
+                  110
                 ]
               },
               {
@@ -179,10 +115,6 @@
               }
             ]
           }
-        },
-        {
-          "name": "proposal",
-          "writable": true
         },
         {
           "name": "system_program",
@@ -199,38 +131,7 @@
           "type": "u64"
         },
         {
-          "name": "ct_option_idx",
-          "type": {
-            "array": [
-              "u8",
-              32
-            ]
-          }
-        },
-        {
-          "name": "ct_weight",
-          "type": {
-            "array": [
-              "u8",
-              32
-            ]
-          }
-        },
-        {
-          "name": "pub_key_ballot",
-          "type": {
-            "array": [
-              "u8",
-              32
-            ]
-          }
-        },
-        {
-          "name": "nonce_ballot",
-          "type": "u128"
-        },
-        {
-          "name": "ct_counts",
+          "name": "ct_markers_a",
           "type": {
             "array": [
               {
@@ -239,12 +140,12 @@
                   32
                 ]
               },
-              8
+              16
             ]
           }
         },
         {
-          "name": "ct_total",
+          "name": "ct_count_a",
           "type": {
             "array": [
               "u8",
@@ -253,7 +154,7 @@
           }
         },
         {
-          "name": "pub_key_tally",
+          "name": "pub_key_a",
           "type": {
             "array": [
               "u8",
@@ -262,135 +163,117 @@
           }
         },
         {
-          "name": "nonce_tally",
+          "name": "nonce_a",
+          "type": "u128"
+        },
+        {
+          "name": "ct_markers_b",
+          "type": {
+            "array": [
+              {
+                "array": [
+                  "u8",
+                  32
+                ]
+              },
+              16
+            ]
+          }
+        },
+        {
+          "name": "ct_count_b",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "pub_key_b",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "nonce_b",
           "type": "u128"
         }
       ]
     },
     {
-      "name": "create_proposal",
+      "name": "compute_similarity_callback",
       "discriminator": [
-        132,
-        116,
-        68,
-        174,
-        216,
-        160,
-        198,
-        22
+        84,
+        8,
+        33,
+        219,
+        18,
+        42,
+        170,
+        216
       ],
       "accounts": [
         {
-          "name": "authority",
-          "writable": true,
-          "signer": true
+          "name": "arcium_program",
+          "address": "Arcj82pX7HxYKLR92qvgZUAd7vGS1k4hQvAFcPATFdEQ"
         },
         {
-          "name": "proposal",
-          "writable": true
+          "name": "comp_def_account"
         },
         {
-          "name": "program_state",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  114,
-                  111,
-                  103,
-                  114,
-                  97,
-                  109,
-                  95,
-                  115,
-                  116,
-                  97,
-                  116,
-                  101
-                ]
-              }
-            ]
-          }
+          "name": "mxe_account"
         },
         {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": [
-        {
-          "name": "title",
-          "type": "string"
+          "name": "computation_account"
         },
         {
-          "name": "description",
-          "type": "string"
+          "name": "cluster_account"
         },
         {
-          "name": "num_options",
-          "type": "u8"
+          "name": "instructions_sysvar",
+          "address": "Sysvar1nstructions1111111111111111111111111"
         },
         {
-          "name": "option_labels",
-          "type": {
-            "vec": "string"
-          }
-        },
-        {
-          "name": "voting_ends_at",
-          "type": "i64"
-        }
-      ]
-    },
-    {
-      "name": "finalize_proposal",
-      "discriminator": [
-        23,
-        68,
-        51,
-        167,
-        109,
-        173,
-        187,
-        164
-      ],
-      "accounts": [
-        {
-          "name": "authority",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "proposal",
+          "name": "comparison_record",
           "writable": true
         }
       ],
       "args": [
         {
-          "name": "results",
+          "name": "output",
           "type": {
-            "array": [
-              "u64",
-              8
-            ]
+            "defined": {
+              "name": "SignedComputationOutputs",
+              "generics": [
+                {
+                  "kind": "type",
+                  "type": {
+                    "defined": {
+                      "name": "ComputeSimilarityOutput"
+                    }
+                  }
+                }
+              ]
+            }
           }
         }
       ]
     },
     {
-      "name": "init_cast_and_tally_comp_def",
+      "name": "init_compute_similarity_comp_def",
       "discriminator": [
-        29,
-        51,
-        39,
-        210,
-        196,
-        152,
-        209,
-        41
+        20,
+        201,
+        87,
+        94,
+        45,
+        141,
+        90,
+        122
       ],
       "accounts": [
         {
@@ -475,6 +358,98 @@
         }
       ],
       "args": []
+    },
+    {
+      "name": "register_profile",
+      "discriminator": [
+        218,
+        120,
+        4,
+        210,
+        2,
+        210,
+        149,
+        255
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "genome_profile",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  101,
+                  110,
+                  111,
+                  109,
+                  101,
+                  95,
+                  112,
+                  114,
+                  111,
+                  102,
+                  105,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "program_state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  103,
+                  114,
+                  97,
+                  109,
+                  95,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "profile_hash",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
     }
   ],
   "accounts": [
@@ -518,6 +493,19 @@
       ]
     },
     {
+      "name": "ComparisonRecord",
+      "discriminator": [
+        69,
+        13,
+        93,
+        186,
+        32,
+        181,
+        61,
+        156
+      ]
+    },
+    {
       "name": "ComputationDefinitionAccount",
       "discriminator": [
         245,
@@ -541,6 +529,19 @@
         5,
         51,
         242
+      ]
+    },
+    {
+      "name": "GenomeProfile",
+      "discriminator": [
+        190,
+        239,
+        54,
+        221,
+        134,
+        25,
+        90,
+        165
       ]
     },
     {
@@ -568,59 +569,20 @@
         167,
         230
       ]
-    },
-    {
-      "name": "Proposal",
-      "discriminator": [
-        26,
-        94,
-        189,
-        187,
-        116,
-        136,
-        53,
-        33
-      ]
-    },
-    {
-      "name": "VoteRecord",
-      "discriminator": [
-        112,
-        9,
-        123,
-        165,
-        234,
-        9,
-        157,
-        167
-      ]
     }
   ],
   "events": [
     {
-      "name": "ProposalFinalizedEvent",
+      "name": "SimilarityComputedEvent",
       "discriminator": [
-        228,
-        151,
-        231,
-        28,
-        58,
-        215,
-        17,
-        130
-      ]
-    },
-    {
-      "name": "VoteCastEvent",
-      "discriminator": [
-        241,
-        151,
-        159,
-        134,
-        250,
-        234,
-        71,
-        234
+        227,
+        91,
+        49,
+        152,
+        45,
+        108,
+        104,
+        203
       ]
     }
   ],
@@ -683,32 +645,6 @@
               "u8",
               64
             ]
-          }
-        ]
-      }
-    },
-    {
-      "name": "CastAndTallyOutput",
-      "docs": [
-        "The output of the callback instruction. Provided as a struct with ordered fields",
-        "as anchor does not support tuples and tuple structs yet."
-      ],
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "field_0",
-            "type": {
-              "defined": {
-                "name": "SharedEncryptedStruct",
-                "generics": [
-                  {
-                    "kind": "const",
-                    "value": "9"
-                  }
-                ]
-              }
-            }
           }
         ]
       }
@@ -890,6 +826,34 @@
       }
     },
     {
+      "name": "ComparisonRecord",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "user_a",
+            "type": "pubkey"
+          },
+          {
+            "name": "user_b",
+            "type": "pubkey"
+          },
+          {
+            "name": "comparison_id",
+            "type": "u64"
+          },
+          {
+            "name": "completed",
+            "type": "bool"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
       "name": "ComputationDefinitionAccount",
       "docs": [
         "An account representing a [ComputationDefinition] in a MXE."
@@ -985,6 +949,62 @@
       }
     },
     {
+      "name": "ComputeSimilarityOutput",
+      "docs": [
+        "The output of the callback instruction. Provided as a struct with ordered fields",
+        "as anchor does not support tuples and tuple structs yet."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "field_0",
+            "type": {
+              "defined": {
+                "name": "ComputeSimilarityOutputStruct0"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "ComputeSimilarityOutputStruct0",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "field_0",
+            "type": {
+              "defined": {
+                "name": "SharedEncryptedStruct",
+                "generics": [
+                  {
+                    "kind": "const",
+                    "value": "3"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "name": "field_1",
+            "type": {
+              "defined": {
+                "name": "SharedEncryptedStruct",
+                "generics": [
+                  {
+                    "kind": "const",
+                    "value": "3"
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "Epoch",
       "docs": [
         "The network epoch"
@@ -1001,6 +1021,35 @@
       "type": {
         "kind": "struct",
         "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "GenomeProfile",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "profile_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "comparison_count",
+            "type": "u32"
+          },
           {
             "name": "bump",
             "type": "u8"
@@ -1344,91 +1393,11 @@
             "type": "pubkey"
           },
           {
-            "name": "total_proposals",
-            "type": "u64"
-          }
-        ]
-      }
-    },
-    {
-      "name": "Proposal",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "creator",
-            "type": "pubkey"
-          },
-          {
-            "name": "proposal_id",
+            "name": "total_comparisons",
             "type": "u64"
           },
           {
-            "name": "title",
-            "type": "string"
-          },
-          {
-            "name": "description",
-            "type": "string"
-          },
-          {
-            "name": "num_options",
-            "type": "u8"
-          },
-          {
-            "name": "option_labels",
-            "type": {
-              "vec": "string"
-            }
-          },
-          {
-            "name": "voting_ends_at",
-            "type": "i64"
-          },
-          {
-            "name": "total_votes",
-            "type": "u64"
-          },
-          {
-            "name": "finalized",
-            "type": "bool"
-          },
-          {
-            "name": "results",
-            "type": {
-              "array": [
-                "u64",
-                8
-              ]
-            }
-          },
-          {
-            "name": "bump",
-            "type": "u8"
-          }
-        ]
-      }
-    },
-    {
-      "name": "ProposalFinalizedEvent",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "proposal_id",
-            "type": "u64"
-          },
-          {
-            "name": "results",
-            "type": {
-              "array": [
-                "u64",
-                8
-              ]
-            }
-          },
-          {
-            "name": "total_votes",
+            "name": "total_profiles",
             "type": "u64"
           }
         ]
@@ -1556,6 +1525,18 @@
       }
     },
     {
+      "name": "SimilarityComputedEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "comparison_id",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
       "name": "Timestamp",
       "type": {
         "kind": "struct",
@@ -1607,46 +1588,6 @@
                 64
               ]
             }
-          }
-        ]
-      }
-    },
-    {
-      "name": "VoteCastEvent",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "proposal_id",
-            "type": "u64"
-          },
-          {
-            "name": "total_votes",
-            "type": "u64"
-          }
-        ]
-      }
-    },
-    {
-      "name": "VoteRecord",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "voter",
-            "type": "pubkey"
-          },
-          {
-            "name": "proposal_id",
-            "type": "u64"
-          },
-          {
-            "name": "counted",
-            "type": "bool"
-          },
-          {
-            "name": "timestamp",
-            "type": "i64"
           }
         ]
       }

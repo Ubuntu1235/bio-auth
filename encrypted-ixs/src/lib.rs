@@ -4,41 +4,63 @@ use arcis::*;
 mod circuits {
     use arcis::*;
 
-    const MAX_OPTIONS: usize = 8;
+    const MARKER_COUNT: usize = 16;
 
-    pub struct Ballot {
-        option_idx: u8,
-        weight: u128,
+    pub struct GenomeProfile {
+        markers: [u128; MARKER_COUNT],
+        count: u8,
     }
 
-    pub struct TallyState {
-        counts: [u128; MAX_OPTIONS],
-        total_votes: u128,
+    pub struct MatchResult {
+        similarity_score: u128,
+        matched_markers: u8,
+        total_compared: u8,
     }
 
     #[instruction]
-    pub fn cast_and_tally(
-        ballot: Enc<Shared, Ballot>,
-        current_tally: Enc<Shared, TallyState>,
-    ) -> Enc<Shared, TallyState> {
-        let b = ballot.to_arcis();
-        let t = current_tally.to_arcis();
+    pub fn compute_similarity(
+        profile_a: Enc<Shared, GenomeProfile>,
+        profile_b: Enc<Shared, GenomeProfile>,
+    ) -> (Enc<Shared, MatchResult>, Enc<Shared, MatchResult>) {
+        let a = profile_a.to_arcis();
+        let b = profile_b.to_arcis();
 
-        let mut new_counts = t.counts;
-        let new_total = t.total_votes + b.weight;
+        let mut matched: u8 = 0;
+        let mut compared: u8 = 0;
 
-        for i in 0..MAX_OPTIONS {
-            let is_selected = b.option_idx == (i as u8);
-            if is_selected {
-                new_counts[i] = new_counts[i] + b.weight;
+        for i in 0..MARKER_COUNT {
+            let a_valid = (i as u8) < a.count;
+            let b_valid = (i as u8) < b.count;
+            let both_valid = a_valid && b_valid;
+            let markers_match = a.markers[i] == b.markers[i];
+            let non_zero = a.markers[i] != 0;
+
+            if both_valid {
+                compared = compared + 1;
+            }
+            if both_valid && markers_match && non_zero {
+                matched = matched + 1;
             }
         }
 
-        let result = TallyState {
-            counts: new_counts,
-            total_votes: new_total,
+        let score: u128 = if compared > 0 {
+            (matched as u128) * 10000 / (compared as u128)
+        } else {
+            0
         };
 
-        current_tally.owner.from_arcis(result)
+        let result = MatchResult {
+            similarity_score: score,
+            matched_markers: matched,
+            total_compared: compared,
+        };
+
+        let result_b = MatchResult {
+            similarity_score: score,
+            matched_markers: matched,
+            total_compared: compared,
+        };
+
+        (profile_a.owner.from_arcis(result), profile_b.owner.from_arcis(result_b))
     }
 }
