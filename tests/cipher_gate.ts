@@ -1,7 +1,7 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { PublicKey } from "@solana/web3.js";
-import { GenomeShield } from "../target/types/genome_shield";
+import { CipherGate } from "../target/types/cipher_gate";
 import { randomBytes } from "crypto";
 import {
   awaitComputationFinalization,
@@ -27,11 +27,11 @@ import * as fs from "fs";
 import * as os from "os";
 import { expect } from "chai";
 
-describe("GenomeShield", () => {
+describe("CipherGate", () => {
   // Configure the client to use the local cluster.
   anchor.setProvider(anchor.AnchorProvider.env());
   const program = anchor.workspace
-    .GenomeShield as Program<GenomeShield>;
+    .CipherGate as Program<CipherGate>;
   const provider = anchor.getProvider();
   const arciumProgram = getArciumProgram(provider as anchor.AnchorProvider);
 
@@ -127,7 +127,7 @@ describe("GenomeShield", () => {
   });
 
   async function initAddTogetherCompDef(
-    program: Program<GenomeShield>,
+    program: Program<CipherGate>,
     owner: anchor.web3.Keypair,
   ): Promise<string> {
     const baseSeedCompDefAcc = getArciumAccountBaseSeed(

@@ -4,63 +4,70 @@ use arcis::*;
 mod circuits {
     use arcis::*;
 
-    const MARKER_COUNT: usize = 16;
+    const MAX_POLICIES: usize = 8;
 
-    pub struct GenomeProfile {
-        markers: [u128; MARKER_COUNT],
-        count: u8,
+    pub struct AccessRequest {
+        requester_id: u128,
+        resource_id: u128,
+        timestamp: u128,
+        payment_amount: u128,
     }
 
-    pub struct MatchResult {
-        similarity_score: u128,
-        matched_markers: u8,
-        total_compared: u8,
+    pub struct AccessPolicy {
+        resource_id: u128,
+        owner_id: u128,
+        allowed_users: [u128; MAX_POLICIES],
+        expiry_times: [u128; MAX_POLICIES],
+        min_payments: [u128; MAX_POLICIES],
+        policy_count: u8,
+        revoked: [bool; MAX_POLICIES],
+    }
+
+    pub struct AccessResult {
+        granted: u8,
+        decryption_key_fragment: u128,
+        policy_index: u8,
+        reason_code: u8,
     }
 
     #[instruction]
-    pub fn compute_similarity(
-        profile_a: Enc<Shared, GenomeProfile>,
-        profile_b: Enc<Shared, GenomeProfile>,
-    ) -> (Enc<Shared, MatchResult>, Enc<Shared, MatchResult>) {
-        let a = profile_a.to_arcis();
-        let b = profile_b.to_arcis();
+    pub fn check_access(
+        request: Enc<Shared, AccessRequest>,
+        policy: Enc<Shared, AccessPolicy>,
+    ) -> Enc<Shared, AccessResult> {
+        let req = request.to_arcis();
+        let pol = policy.to_arcis();
 
-        let mut matched: u8 = 0;
-        let mut compared: u8 = 0;
+        let mut granted: u8 = 0;
+        let mut key_fragment: u128 = 0;
+        let mut matched_idx: u8 = 0;
+        let mut reason: u8 = 1;
 
-        for i in 0..MARKER_COUNT {
-            let a_valid = (i as u8) < a.count;
-            let b_valid = (i as u8) < b.count;
-            let both_valid = a_valid && b_valid;
-            let markers_match = a.markers[i] == b.markers[i];
-            let non_zero = a.markers[i] != 0;
+        for i in 0..MAX_POLICIES {
+            let valid_policy = (i as u8) < pol.policy_count;
+            let user_match = pol.allowed_users[i] == req.requester_id;
+            let not_expired = req.timestamp <= pol.expiry_times[i];
+            let paid_enough = req.payment_amount >= pol.min_payments[i];
+            let not_revoked = !pol.revoked[i];
+            let resource_match = pol.resource_id == req.resource_id;
 
-            if both_valid {
-                compared = compared + 1;
-            }
-            if both_valid && markers_match && non_zero {
-                matched = matched + 1;
+            let all_pass = valid_policy && user_match && not_expired && paid_enough && not_revoked && resource_match;
+
+            if all_pass {
+                granted = 1;
+                key_fragment = pol.owner_id + req.requester_id + req.resource_id;
+                matched_idx = i as u8;
+                reason = 0;
             }
         }
 
-        let score: u128 = if compared > 0 {
-            (matched as u128) * 10000 / (compared as u128)
-        } else {
-            0
+        let result = AccessResult {
+            granted,
+            decryption_key_fragment: key_fragment,
+            policy_index: matched_idx,
+            reason_code: reason,
         };
 
-        let result = MatchResult {
-            similarity_score: score,
-            matched_markers: matched,
-            total_compared: compared,
-        };
-
-        let result_b = MatchResult {
-            similarity_score: score,
-            matched_markers: matched,
-            total_compared: compared,
-        };
-
-        (profile_a.owner.from_arcis(result), profile_b.owner.from_arcis(result_b))
+        request.owner.from_arcis(result)
     }
 }

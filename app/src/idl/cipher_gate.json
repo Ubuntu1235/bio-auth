@@ -1,23 +1,61 @@
 {
-  "address": "2NaVBnwtSzp32CMnhrZw8CWbhj4Ftx3u94zbkLptqbTP",
+  "address": "2mytDh5J6gN1BAyrwgGfdrCPHAe6v6BbGTbTDANVQXKP",
   "metadata": {
-    "name": "genome_shield",
+    "name": "cipher_gate",
     "version": "0.1.0",
     "spec": "0.1.0",
     "description": "Created with Arcium & Anchor"
   },
   "instructions": [
     {
-      "name": "compute_similarity",
+      "name": "add_policy",
       "discriminator": [
-        21,
-        80,
-        9,
-        136,
-        119,
-        150,
-        60,
-        210
+        62,
+        42,
+        248,
+        232,
+        151,
+        140,
+        199,
+        59
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "resource",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "allowed_user",
+          "type": "pubkey"
+        },
+        {
+          "name": "expiry_time",
+          "type": "i64"
+        },
+        {
+          "name": "min_payment",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "check_access",
+      "discriminator": [
+        74,
+        62,
+        42,
+        188,
+        96,
+        229,
+        63,
+        50
       ],
       "accounts": [
         {
@@ -90,23 +128,23 @@
           "address": "7EbMUTLo5DjdzbN7s8BXeZwXzEwNQb1hScfRvWg8a6ot"
         },
         {
-          "name": "comparison_record",
+          "name": "access_log",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "const",
                 "value": [
-                  99,
-                  111,
-                  109,
-                  112,
                   97,
-                  114,
-                  105,
+                  99,
+                  99,
+                  101,
                   115,
+                  115,
+                  95,
+                  108,
                   111,
-                  110
+                  103
                 ]
               },
               {
@@ -131,21 +169,7 @@
           "type": "u64"
         },
         {
-          "name": "ct_markers_a",
-          "type": {
-            "array": [
-              {
-                "array": [
-                  "u8",
-                  32
-                ]
-              },
-              16
-            ]
-          }
-        },
-        {
-          "name": "ct_count_a",
+          "name": "ct_requester_id",
           "type": {
             "array": [
               "u8",
@@ -154,7 +178,7 @@
           }
         },
         {
-          "name": "pub_key_a",
+          "name": "ct_resource_id",
           "type": {
             "array": [
               "u8",
@@ -163,11 +187,56 @@
           }
         },
         {
-          "name": "nonce_a",
+          "name": "ct_timestamp",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "ct_payment",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "pub_key_req",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "nonce_req",
           "type": "u128"
         },
         {
-          "name": "ct_markers_b",
+          "name": "ct_pol_resource_id",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "ct_pol_owner_id",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "ct_allowed",
           "type": {
             "array": [
               {
@@ -176,12 +245,40 @@
                   32
                 ]
               },
-              16
+              8
             ]
           }
         },
         {
-          "name": "ct_count_b",
+          "name": "ct_expiries",
+          "type": {
+            "array": [
+              {
+                "array": [
+                  "u8",
+                  32
+                ]
+              },
+              8
+            ]
+          }
+        },
+        {
+          "name": "ct_min_pays",
+          "type": {
+            "array": [
+              {
+                "array": [
+                  "u8",
+                  32
+                ]
+              },
+              8
+            ]
+          }
+        },
+        {
+          "name": "ct_pol_count",
           "type": {
             "array": [
               "u8",
@@ -190,7 +287,21 @@
           }
         },
         {
-          "name": "pub_key_b",
+          "name": "ct_revoked",
+          "type": {
+            "array": [
+              {
+                "array": [
+                  "u8",
+                  32
+                ]
+              },
+              8
+            ]
+          }
+        },
+        {
+          "name": "pub_key_pol",
           "type": {
             "array": [
               "u8",
@@ -199,22 +310,22 @@
           }
         },
         {
-          "name": "nonce_b",
+          "name": "nonce_pol",
           "type": "u128"
         }
       ]
     },
     {
-      "name": "compute_similarity_callback",
+      "name": "check_access_callback",
       "discriminator": [
-        84,
-        8,
-        33,
-        219,
-        18,
-        42,
-        170,
-        216
+        210,
+        63,
+        194,
+        44,
+        80,
+        104,
+        96,
+        150
       ],
       "accounts": [
         {
@@ -238,7 +349,7 @@
           "address": "Sysvar1nstructions1111111111111111111111111"
         },
         {
-          "name": "comparison_record",
+          "name": "access_log",
           "writable": true
         }
       ],
@@ -253,7 +364,7 @@
                   "kind": "type",
                   "type": {
                     "defined": {
-                      "name": "ComputeSimilarityOutput"
+                      "name": "CheckAccessOutput"
                     }
                   }
                 }
@@ -264,16 +375,16 @@
       ]
     },
     {
-      "name": "init_compute_similarity_comp_def",
+      "name": "init_check_access_comp_def",
       "discriminator": [
-        20,
-        201,
-        87,
-        94,
-        45,
-        141,
-        90,
-        122
+        119,
+        207,
+        193,
+        148,
+        10,
+        207,
+        96,
+        243
       ],
       "accounts": [
         {
@@ -360,16 +471,16 @@
       "args": []
     },
     {
-      "name": "register_profile",
+      "name": "register_resource",
       "discriminator": [
-        218,
-        120,
-        4,
-        210,
-        2,
-        210,
-        149,
-        255
+        87,
+        209,
+        164,
+        28,
+        6,
+        82,
+        232,
+        214
       ],
       "accounts": [
         {
@@ -378,35 +489,8 @@
           "signer": true
         },
         {
-          "name": "genome_profile",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  103,
-                  101,
-                  110,
-                  111,
-                  109,
-                  101,
-                  95,
-                  112,
-                  114,
-                  111,
-                  102,
-                  105,
-                  108,
-                  101
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "authority"
-              }
-            ]
-          }
+          "name": "resource",
+          "writable": true
         },
         {
           "name": "program_state",
@@ -441,18 +525,64 @@
       ],
       "args": [
         {
-          "name": "profile_hash",
-          "type": {
-            "array": [
-              "u8",
-              32
-            ]
-          }
+          "name": "resource_name",
+          "type": "string"
+        },
+        {
+          "name": "resource_uri",
+          "type": "string"
+        },
+        {
+          "name": "storage_type",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "revoke_access",
+      "discriminator": [
+        106,
+        128,
+        38,
+        169,
+        103,
+        238,
+        102,
+        147
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "resource",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "policy_index",
+          "type": "u8"
         }
       ]
     }
   ],
   "accounts": [
+    {
+      "name": "AccessLog",
+      "discriminator": [
+        99,
+        147,
+        234,
+        225,
+        53,
+        121,
+        161,
+        122
+      ]
+    },
     {
       "name": "ArciumSignerAccount",
       "discriminator": [
@@ -493,19 +623,6 @@
       ]
     },
     {
-      "name": "ComparisonRecord",
-      "discriminator": [
-        69,
-        13,
-        93,
-        186,
-        32,
-        181,
-        61,
-        156
-      ]
-    },
-    {
       "name": "ComputationDefinitionAccount",
       "discriminator": [
         245,
@@ -529,19 +646,6 @@
         5,
         51,
         242
-      ]
-    },
-    {
-      "name": "GenomeProfile",
-      "discriminator": [
-        190,
-        239,
-        54,
-        221,
-        134,
-        25,
-        90,
-        165
       ]
     },
     {
@@ -569,20 +673,46 @@
         167,
         230
       ]
+    },
+    {
+      "name": "Resource",
+      "discriminator": [
+        10,
+        160,
+        2,
+        1,
+        42,
+        207,
+        51,
+        212
+      ]
     }
   ],
   "events": [
     {
-      "name": "SimilarityComputedEvent",
+      "name": "AccessCheckedEvent",
       "discriminator": [
-        227,
-        91,
-        49,
-        152,
-        45,
-        108,
-        104,
-        203
+        5,
+        208,
+        213,
+        208,
+        37,
+        180,
+        229,
+        238
+      ]
+    },
+    {
+      "name": "AccessRevokedEvent",
+      "discriminator": [
+        0,
+        123,
+        250,
+        9,
+        94,
+        246,
+        235,
+        158
       ]
     }
   ],
@@ -590,15 +720,76 @@
     {
       "code": 6000,
       "name": "AbortedComputation",
-      "msg": "The computation was aborted"
+      "msg": "Computation aborted"
     },
     {
       "code": 6001,
       "name": "ClusterNotSet",
       "msg": "Cluster not set"
+    },
+    {
+      "code": 6002,
+      "name": "MaxPoliciesReached",
+      "msg": "Max policies reached"
     }
   ],
   "types": [
+    {
+      "name": "AccessCheckedEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "log_id",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "AccessLog",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "requester",
+            "type": "pubkey"
+          },
+          {
+            "name": "resource_id",
+            "type": "u64"
+          },
+          {
+            "name": "log_id",
+            "type": "u64"
+          },
+          {
+            "name": "completed",
+            "type": "bool"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "AccessRevokedEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "resource_id",
+            "type": "u64"
+          },
+          {
+            "name": "policy_index",
+            "type": "u8"
+          }
+        ]
+      }
+    },
     {
       "name": "Activation",
       "type": {
@@ -645,6 +836,32 @@
               "u8",
               64
             ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "CheckAccessOutput",
+      "docs": [
+        "The output of the callback instruction. Provided as a struct with ordered fields",
+        "as anchor does not support tuples and tuple structs yet."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "field_0",
+            "type": {
+              "defined": {
+                "name": "SharedEncryptedStruct",
+                "generics": [
+                  {
+                    "kind": "const",
+                    "value": "4"
+                  }
+                ]
+              }
+            }
           }
         ]
       }
@@ -826,34 +1043,6 @@
       }
     },
     {
-      "name": "ComparisonRecord",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "user_a",
-            "type": "pubkey"
-          },
-          {
-            "name": "user_b",
-            "type": "pubkey"
-          },
-          {
-            "name": "comparison_id",
-            "type": "u64"
-          },
-          {
-            "name": "completed",
-            "type": "bool"
-          },
-          {
-            "name": "timestamp",
-            "type": "i64"
-          }
-        ]
-      }
-    },
-    {
       "name": "ComputationDefinitionAccount",
       "docs": [
         "An account representing a [ComputationDefinition] in a MXE."
@@ -949,62 +1138,6 @@
       }
     },
     {
-      "name": "ComputeSimilarityOutput",
-      "docs": [
-        "The output of the callback instruction. Provided as a struct with ordered fields",
-        "as anchor does not support tuples and tuple structs yet."
-      ],
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "field_0",
-            "type": {
-              "defined": {
-                "name": "ComputeSimilarityOutputStruct0"
-              }
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "ComputeSimilarityOutputStruct0",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "field_0",
-            "type": {
-              "defined": {
-                "name": "SharedEncryptedStruct",
-                "generics": [
-                  {
-                    "kind": "const",
-                    "value": "3"
-                  }
-                ]
-              }
-            }
-          },
-          {
-            "name": "field_1",
-            "type": {
-              "defined": {
-                "name": "SharedEncryptedStruct",
-                "generics": [
-                  {
-                    "kind": "const",
-                    "value": "3"
-                  }
-                ]
-              }
-            }
-          }
-        ]
-      }
-    },
-    {
       "name": "Epoch",
       "docs": [
         "The network epoch"
@@ -1021,35 +1154,6 @@
       "type": {
         "kind": "struct",
         "fields": [
-          {
-            "name": "bump",
-            "type": "u8"
-          }
-        ]
-      }
-    },
-    {
-      "name": "GenomeProfile",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "owner",
-            "type": "pubkey"
-          },
-          {
-            "name": "profile_hash",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
-            "name": "comparison_count",
-            "type": "u32"
-          },
           {
             "name": "bump",
             "type": "u8"
@@ -1393,12 +1497,88 @@
             "type": "pubkey"
           },
           {
-            "name": "total_comparisons",
+            "name": "total_resources",
             "type": "u64"
           },
           {
-            "name": "total_profiles",
+            "name": "total_access_checks",
             "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Resource",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "resource_id",
+            "type": "u64"
+          },
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "uri",
+            "type": "string"
+          },
+          {
+            "name": "storage_type",
+            "type": "u8"
+          },
+          {
+            "name": "policy_count",
+            "type": "u8"
+          },
+          {
+            "name": "allowed_users",
+            "type": {
+              "array": [
+                "pubkey",
+                8
+              ]
+            }
+          },
+          {
+            "name": "expiry_times",
+            "type": {
+              "array": [
+                "i64",
+                8
+              ]
+            }
+          },
+          {
+            "name": "min_payments",
+            "type": {
+              "array": [
+                "u64",
+                8
+              ]
+            }
+          },
+          {
+            "name": "revoked",
+            "type": {
+              "array": [
+                "bool",
+                8
+              ]
+            }
+          },
+          {
+            "name": "total_accesses",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
           }
         ]
       }
@@ -1520,18 +1700,6 @@
                 "generic": "O"
               }
             ]
-          }
-        ]
-      }
-    },
-    {
-      "name": "SimilarityComputedEvent",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "comparison_id",
-            "type": "u64"
           }
         ]
       }

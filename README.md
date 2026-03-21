@@ -1,90 +1,120 @@
-# GenomeShield - Private Genomic Matching on Solana
+# Structure of this project
 
-Compare genetic markers without exposing raw sequences. Only authorized similarity scores are revealed.
+This project is structured pretty similarly to how a regular Solana Anchor project is structured. The main difference lies in there being two places to write code here:
 
-Live Demo: https://genome-shield.vercel.app
+- The `programs` dir like usual Anchor programs
+- The `encrypted-ixs` dir for confidential computing instructions
 
-Program ID: 2NaVBnwtSzp32CMnhrZw8CWbhj4Ftx3u94zbkLptqbTP (Solana Devnet)
+When working with plaintext data, we can edit it inside our program as normal. When working with confidential data though, state transitions take place off-chain using the Arcium network as a co-processor. For this, we then always need two instructions in our program: one that gets called to initialize a confidential computation, and one that gets called when the computation is done and supplies the resulting data. Additionally, since the types and operations in a Solana program and in a confidential computing environment are a bit different, we define the operations themselves in the `encrypted-ixs` dir using our Rust-based framework called Arcis. To link all of this together, we provide a few macros that take care of ensuring the correct accounts and data are passed for the specific initialization and callback functions:
 
-Explorer: https://explorer.solana.com/address/2NaVBnwtSzp32CMnhrZw8CWbhj4Ftx3u94zbkLptqbTP?cluster=devnet
+```rust
+// encrypted-ixs/add_together.rs
 
-## The Problem
+use arcis::*;
 
-Genomic matching provides critical insights for healthcare, ancestry, and research but requires exposing highly sensitive genetic data. Centralized platforms store raw sequences, creating massive privacy risks. Data breaches expose immutable biological information that cannot be changed like a password.
+#[encrypted]
+mod circuits {
+    use arcis::*;
 
-## The Solution
+    pub struct InputValues {
+        v1: u8,
+        v2: u8,
+    }
 
-GenomeShield uses Arcium MPC network to compute genomic similarity on encrypted data. Two users can discover how genetically similar they are without either party, any platform, or any MPC node individually ever seeing raw genetic sequences.
+    #[instruction]
+    pub fn add_together(input_ctxt: Enc<Shared, InputValues>) -> Enc<Shared, u16> {
+        let input = input_ctxt.to_arcis();
+        let sum = input.v1 as u16 + input.v2 as u16;
+        input_ctxt.owner.from_arcis(sum)
+    }
+}
 
-## How Arcium Enables This
+// programs/my_program/src/lib.rs
 
-### Step 1: Local Hashing
-Genomic markers (SNP identifiers like rs1426654, rs12913832) are hashed deterministically in the browser. No raw genetic data ever leaves the client device.
+use anchor_lang::prelude::*;
+use arcium_anchor::prelude::*;
 
-### Step 2: Rescue Cipher Encryption
-Hashed markers are encrypted using Arcium Rescue cipher in CTR mode with 128-bit security. A x25519 Diffie-Hellman key exchange derives a shared key between the client and MXE cluster.
+declare_id!("<some ID>");
 
-### Step 3: MPC Comparison via Arcium
-Encrypted profiles are submitted to Arcium ARX node network. Using secret sharing, data is split into random-looking fragments across nodes. The nodes execute the compute_similarity circuit comparing every marker pair without any node learning which markers matched.
+#[arcium_program]
+pub mod my_program {
+    use super::*;
 
-### Step 4: Score Only
-The circuit returns only a similarity score and match count, encrypted separately per user. Which specific markers matched and all non-matching data remain permanently hidden.
+    pub fn init_add_together_comp_def(ctx: Context<InitAddTogetherCompDef>) -> Result<()> {
+        init_comp_def(ctx.accounts, None, None)?;
+        Ok(())
+    }
 
-## Privacy Guarantees
+    pub fn add_together(
+        ctx: Context<AddTogether>,
+        computation_offset: u64,
+        ciphertext_0: [u8; 32],
+        ciphertext_1: [u8; 32],
+        pubkey: [u8; 32],
+        nonce: u128,
+    ) -> Result<()> {
+        ctx.accounts.sign_pda_account.bump = ctx.bumps.sign_pda_account;
+        let args = ArgBuilder::new()
+            .x25519_pubkey(pubkey)
+            .plaintext_u128(nonce)
+            .encrypted_u8(ciphertext_0)
+            .encrypted_u8(ciphertext_1)
+            .build();
 
-- Genomic secrecy: Raw sequences never exist on-chain or in any node memory
-- Full-threshold security: ALL ARX nodes would need to collude to break privacy
-- Marker-level privacy: Which specific markers matched is never revealed
-- Immutable protection: Genetic data cannot be changed if leaked
-- Client-side hashing: Raw SNP data never leaves the browser
+        queue_computation(
+            ctx.accounts,
+            computation_offset,
+            args,
+            vec![AddTogetherCallback::callback_ix(
+                computation_offset,
+                &ctx.accounts.mxe_account,
+                &[]
+            )?],
+            1,
+            0,
+        )?;
+        Ok(())
+    }
 
-## Technical Implementation
+    #[arcium_callback(encrypted_ix = "add_together")]
+    pub fn add_together_callback(
+        ctx: Context<AddTogetherCallback>,
+        output: SignedComputationOutputs<AddTogetherOutput>,
+    ) -> Result<()> {
+        let o = match output.verify_output(&ctx.accounts.cluster_account, &ctx.accounts.computation_account) {
+            Ok(AddTogetherOutput { field_0 }) => field_0,
+            Err(_) => return Err(ErrorCode::AbortedComputation.into()),
+        };
 
-### Arcis Circuit (encrypted-ixs/src/lib.rs)
-- GenomeProfile struct: markers [u128; 16] + count (u8)
-- MatchResult struct: similarity_score (u128) + matched_markers (u8) + total_compared (u8)
-- Iterates over 16 marker positions with secret-shared equality checks
-- Computes similarity as (matched * 10000) / compared for precision
-- Returns encrypted results per user
+        emit!(SumEvent {
+            sum: o.ciphertexts[0],
+            nonce: o.nonce.to_le_bytes(),
+        });
+        Ok(())
+    }
+}
 
-### Solana Program (programs/genome_shield/src/lib.rs)
-- initialize: sets up program state
-- register_profile: registers genome profile hash on-chain
-- init_compute_similarity_comp_def: registers MPC circuit on-chain
-- compute_similarity: encrypts and queues via ArgBuilder + queue_computation
-- compute_similarity_callback: verified results via SignedComputationOutputs
-- Custom accounts: ProgramState, GenomeProfile, ComparisonRecord
+#[queue_computation_accounts("add_together", payer)]
+#[derive(Accounts)]
+#[instruction(computation_offset: u64)]
+pub struct AddTogether<'info> {
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    // ... other required accounts
+}
 
-### Frontend (app/)
-- React + TypeScript + Vite with Anchor SDK
-- Real on-chain transactions on Solana Explorer
-- Phantom wallet integration with devnet balance
-- SNP marker input with local hashing visualization
-- Dark biotech UI with DNA marker visualization
+#[callback_accounts("add_together")]
+#[derive(Accounts)]
+pub struct AddTogetherCallback<'info> {
+    // ... required accounts
+    pub some_extra_acc: AccountInfo<'info>,
+}
 
-## How to Test
-
-1. Install Phantom wallet, switch to Devnet
-2. Get devnet SOL from faucet
-3. Visit https://genome-shield.vercel.app
-4. Connect wallet
-5. Click Initialize - real Solana devnet transaction
-6. Click Register Profile - registers genome profile on-chain
-7. Enter SNP markers and a partner wallet address
-8. Click Run Private Comparison
-9. View similarity score - raw markers remain encrypted
-10. Verify transactions on Solana Explorer
-
-## Deployed on Solana Devnet
-
-- Program: 2NaVBnwtSzp32CMnhrZw8CWbhj4Ftx3u94zbkLptqbTP
-- MXE: Successfully initialized with cluster migration
-- Demo: https://genome-shield.vercel.app
-
-## Tech Stack
-
-Solana - Arcium - Arcis - Anchor 0.32.1 - React + Vite - Phantom
-
-## License
-
-MIT
+#[init_computation_definition_accounts("add_together", payer)]
+#[derive(Accounts)]
+pub struct InitAddTogetherCompDef<'info> {
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    // ... other required accounts
+}
+```

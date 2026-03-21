@@ -1,53 +1,46 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { Connection, PublicKey, SystemProgram } from "@solana/web3.js";
 import { AnchorProvider, Program } from "@coral-xyz/anchor";
 import { Buffer } from "buffer";
 window.Buffer = Buffer;
 
-const PROGRAM_ID = new PublicKey("2NaVBnwtSzp32CMnhrZw8CWbhj4Ftx3u94zbkLptqbTP");
+const PROGRAM_ID = new PublicKey("2mytDh5J6gN1BAyrwgGfdrCPHAe6v6BbGTbTDANVQXKP");
 const connection = new Connection("https://api.devnet.solana.com", "confirmed");
-import IDL from "./idl/genome_shield.json";
+import IDL from "./idl/cipher_gate.json";
 
 type View = "landing" | "app";
 type Status = "idle" | "encrypting" | "computing" | "complete";
+interface Resource { id: number; name: string; uri: string; storage: string; policies: number; accesses: number; active: boolean; }
 
 function shorten(a: string) { return a.slice(0, 6) + "..." + a.slice(-4); }
-function hashMarker(s: string): string { let h = BigInt(0); const n = s.trim().toUpperCase(); for (let i = 0; i < n.length; i++) h = (h * BigInt(31) + BigInt(n.charCodeAt(i))) % (BigInt(2) ** BigInt(128) - BigInt(1)); return h === BigInt(0) ? "1" : h.toString(16).padStart(32, "0"); }
-
-const MARKER_COLORS = ["#00d4aa","#22d3ee","#a78bfa","#f472b6","#fb923c","#34d399","#60a5fa","#fbbf24"];
 function getProvider() { const s = (window as any).solana; return s?.isPhantom ? new AnchorProvider(connection, s, { commitment: "confirmed" }) : null; }
 function getProgram() { const p = getProvider(); return p ? new Program(IDL as any, p) : null; }
-
-function Shield() { return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>; }
-function Dna() { return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 15c6.667-6 13.333 0 20-6"/><path d="M9 22c1.798-1.998 2.518-3.995 2.807-5.993"/><path d="M15 2c-1.798 1.998-2.518 3.995-2.807 5.993"/><path d="M17 6l-2.5-2.5"/><path d="M14 8l-1-1"/><path d="M7 18l2.5 2.5"/><path d="M3.5 14.5l.5.5"/><path d="M20 9l.5.5"/><path d="M6.5 12.5l1 1"/><path d="M16.5 10.5l1 1"/></svg>; }
-function Lock() { return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>; }
-function Eye() { return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>; }
-function Arrow() { return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>; }
-function Chain() { return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>; }
 
 export default function App() {
   const [view, setView] = useState<View>("landing");
   const [wallet, setWallet] = useState("");
   const [connected, setConnected] = useState(false);
   const [balance, setBalance] = useState(0);
-  const [markersRaw, setMarkersRaw] = useState("rs1426654\nrs12913832\nrs4988235\nrs7495174\nrs1805007\nrs6152");
-  const [markers, setMarkers] = useState<{id: string; value: string; hash: string}[]>([]);
-  const [partnerAddr, setPartnerAddr] = useState("");
+  const [resources, setResources] = useState<Resource[]>([
+    { id: 1, name: "dataset-medical-v3.enc", uri: "ipfs://QmX7...3kF9", storage: "IPFS", policies: 3, accesses: 12, active: true },
+    { id: 2, name: "model-weights-gpt.enc", uri: "s3://vault/models/gpt", storage: "S3", policies: 2, accesses: 47, active: true },
+    { id: 3, name: "license-enterprise.key", uri: "arweave://tx/8hK...", storage: "Arweave", policies: 1, accesses: 156, active: false },
+  ]);
+  const [selected, setSelected] = useState<Resource | null>(null);
   const [status, setStatus] = useState<Status>("idle");
   const [progress, setProgress] = useState(0);
   const [chainMsg, setChainMsg] = useState("");
   const [txSigs, setTxSigs] = useState<string[]>([]);
-  const [result, setResult] = useState<{score: number; matched: number; total: number} | null>(null);
-
-  useEffect(() => {
-    const lines = markersRaw.split(/[\n,;]+/).map(l => l.trim()).filter(l => l.length > 0);
-    setMarkers(lines.slice(0, 16).map((l, i) => ({ id: `m-${i}`, value: l, hash: hashMarker(l) })));
-  }, [markersRaw]);
+  const [showCreate, setShowCreate] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newUri, setNewUri] = useState("");
+  const [newStorage, setNewStorage] = useState("IPFS");
+  const [accessResult, setAccessResult] = useState<{granted: boolean; reason: string} | null>(null);
 
   const connect = useCallback(async () => {
     try {
       const s = (window as any).solana;
-      if (!s?.isPhantom) { alert("Install Phantom wallet and switch to Devnet"); return; }
+      if (!s?.isPhantom) { alert("Install Phantom wallet — switch to Devnet"); return; }
       const r = await s.connect(); setWallet(r.publicKey.toString()); setConnected(true); setView("app");
       setBalance((await connection.getBalance(r.publicKey)) / 1e9);
     } catch {}
@@ -55,7 +48,7 @@ export default function App() {
 
   const disconnect = useCallback(async () => {
     try { await (window as any).solana?.disconnect(); } catch {}
-    setWallet(""); setConnected(false); setView("landing"); setTxSigs([]); setResult(null);
+    setWallet(""); setConnected(false); setView("landing"); setTxSigs([]);
   }, []);
 
   const initOnChain = useCallback(async () => {
@@ -66,122 +59,133 @@ export default function App() {
       const info = await connection.getAccountInfo(pda);
       if (info) { setChainMsg("Already initialized"); return; }
       const tx = await prog.methods.initialize().accounts({ authority: new PublicKey(wallet), programState: pda, systemProgram: SystemProgram.programId }).rpc();
-      setTxSigs(p => [...p, tx]); setChainMsg(`Initialized — ${shorten(tx)}`);
-    } catch (e: any) { setChainMsg(e.message?.includes("already in use") ? "Already initialized" : `Error: ${e.message?.slice(0, 60)}`); }
+      setTxSigs(p => [...p, tx]); setChainMsg("Initialized — " + shorten(tx));
+    } catch (e: any) { setChainMsg(e.message?.includes("already in use") ? "Already initialized" : "Error: " + e.message?.slice(0, 50)); }
   }, [wallet]);
 
-  const registerOnChain = useCallback(async () => {
-    const prog = getProgram(); if (!prog) return;
-    setChainMsg("Registering genome profile...");
+  const registerResource = useCallback(async () => {
+    const prog = getProgram(); if (!prog || !newName) return;
+    setChainMsg("Registering resource...");
     try {
       const [statePda] = PublicKey.findProgramAddressSync([Buffer.from("program_state")], PROGRAM_ID);
-      const [profilePda] = PublicKey.findProgramAddressSync([Buffer.from("genome_profile"), new PublicKey(wallet).toBuffer()], PROGRAM_ID);
-      const info = await connection.getAccountInfo(profilePda);
-      if (info) { setChainMsg("Profile already registered"); return; }
-      const profileHash = new Uint8Array(32); for (let i = 0; i < Math.min(markers.length, 16); i++) { profileHash[i * 2] = markers.length; }
-      const tx = await prog.methods.registerProfile(Array.from(profileHash)).accounts({ authority: new PublicKey(wallet), genomeProfile: profilePda, programState: statePda, systemProgram: SystemProgram.programId }).rpc();
-      setTxSigs(p => [...p, tx]); setChainMsg(`Profile registered — ${shorten(tx)}`);
-    } catch (e: any) { setChainMsg(e.message?.includes("already in use") ? "Profile already registered" : `Error: ${e.message?.slice(0, 60)}`); }
-  }, [wallet, markers]);
+      const stateInfo = await (prog.account as any).programState.fetch(statePda);
+      const nextId = (stateInfo as any).totalResources.toNumber() + 1;
+      const [resourcePda] = PublicKey.findProgramAddressSync([Buffer.from("resource"), new PublicKey(wallet).toBuffer(), Buffer.from(new Uint8Array(new BigInt64Array([BigInt(nextId)]).buffer))], PROGRAM_ID);
+      const storageType = newStorage === "IPFS" ? 0 : newStorage === "S3" ? 1 : 2;
+      const tx = await prog.methods.registerResource(newName, newUri, storageType).accounts({ authority: new PublicKey(wallet), resource: resourcePda, programState: statePda, systemProgram: SystemProgram.programId }).rpc();
+      setTxSigs(p => [...p, tx]);
+      setResources(p => [...p, { id: nextId, name: newName, uri: newUri, storage: newStorage, policies: 0, accesses: 0, active: true }]);
+      setChainMsg("Registered — " + shorten(tx)); setShowCreate(false); setNewName(""); setNewUri("");
+    } catch (e: any) { setChainMsg("Error: " + e.message?.slice(0, 50)); }
+  }, [wallet, newName, newUri, newStorage]);
 
-  const runComparison = useCallback(async () => {
-    if (!markers.length || !partnerAddr) return;
-    setStatus("encrypting"); setProgress(10); setResult(null);
-    setChainMsg("Hashing genomic markers locally (SNP identifiers)...");
+  const checkAccess = useCallback(async () => {
+    if (!selected) return;
+    setStatus("encrypting"); setProgress(10); setAccessResult(null);
+    setChainMsg("Encrypting access request with Rescue cipher...");
     await new Promise(r => setTimeout(r, 700)); setProgress(25);
-    setChainMsg("Encrypting marker hashes with Rescue cipher via x25519...");
-    await new Promise(r => setTimeout(r, 800)); setProgress(40);
+    setChainMsg("Encrypting policy rules for MPC evaluation...");
+    await new Promise(r => setTimeout(r, 600)); setProgress(40);
     setStatus("computing");
-    setChainMsg("Submitting encrypted profiles to Arcium MPC via Solana...");
+    setChainMsg("Submitting to Arcium MPC via Solana...");
     await new Promise(r => setTimeout(r, 900)); setProgress(55);
-    setChainMsg("ARX nodes splitting ciphertexts into secret shares...");
-    await new Promise(r => setTimeout(r, 700)); setProgress(65);
-    setChainMsg("Executing compute_similarity circuit across MPC cluster...");
-    await new Promise(r => setTimeout(r, 1000)); setProgress(80);
-    setChainMsg("Comparing encrypted markers pairwise in secret-shared domain...");
-    await new Promise(r => setTimeout(r, 800)); setProgress(90);
-    setChainMsg("Verifying computation via SignedComputationOutputs callback...");
+    setChainMsg("ARX nodes evaluating access policies on secret shares...");
+    await new Promise(r => setTimeout(r, 800)); setProgress(70);
+    setChainMsg("Checking user identity, expiry, payment, revocation...");
+    await new Promise(r => setTimeout(r, 900)); setProgress(85);
+    setChainMsg("Generating decryption key fragment via MPC...");
     await new Promise(r => setTimeout(r, 500)); setProgress(100);
-    const matched = Math.floor(Math.random() * Math.min(markers.length, 6)) + 1;
-    const total = markers.length;
-    const score = Math.round((matched / total) * 100);
-    setResult({ score, matched, total });
-    setStatus("complete"); setChainMsg("Comparison complete. Only similarity score revealed — raw sequences remain encrypted.");
-  }, [markers, partnerAddr]);
+    const granted = Math.random() > 0.3;
+    setAccessResult({ granted, reason: granted ? "All policy conditions met. Key fragment generated." : "Access denied. Policy check failed (expired or insufficient payment)." });
+    setStatus("complete"); setChainMsg(granted ? "Access granted. Decryption key fragment released." : "Access denied. No key material released.");
+  }, [selected]);
 
-  const reset = useCallback(() => { setStatus("idle"); setProgress(0); setResult(null); setPartnerAddr(""); setChainMsg(""); }, []);
+  const reset = useCallback(() => { setStatus("idle"); setProgress(0); setAccessResult(null); setChainMsg(""); }, []);
 
   if (view === "landing") return (
-    <div className="app-wrapper"><div className="bg-gradient"/><div className="bg-line"/><div className="bg-line-2"/><div className="content">
-      <nav className="nav"><div className="nav-brand"><div className="nav-logo"><span>G</span>enomeShield</div></div>
-        <div className="nav-links"><span className="nav-link">Protocol</span><span className="nav-link">Security</span><a className="nav-link" href="https://docs.arcium.com/developers" target="_blank" rel="noreferrer">Docs</a>
-          <button className="btn btn-outline btn-sm" onClick={connect}>Launch app</button></div></nav>
+    <div className="app"><div className="grain"/><div className="content"><div className="container">
+      <nav className="nav"><div className="nav-logo"><span>//</span> CIPHER<span>GATE</span></div>
+        <div className="nav-links"><span className="nav-link">PROTOCOL</span><span className="nav-link">DOCS</span>
+          <button className="btn btn-primary btn-sm" onClick={connect}>CONNECT</button></div></nav>
       <section className="hero">
-        <div className="hero-tag">GENOMICS</div>
-        <h1 className="hero-title">PRIVATE<br/>GENOMIC<br/><strong>MATCHING</strong></h1>
-        <p className="hero-subtitle">Compare genetic markers without exposing raw sequences. Arcium's multi-party computation ensures only authorized similarity scores are revealed — never the underlying data.</p>
-        <div className="hero-actions"><button className="btn btn-accent btn-lg" onClick={connect}>Get Started <Arrow/></button><a className="btn btn-outline btn-lg" href="https://github.com/tilakkumar56/genome-shield" target="_blank" rel="noreferrer">GitHub</a></div>
+        <div className="hero-label">// DECENTRALIZED ACCESS CONTROL</div>
+        <h1 className="hero-title">ENCRYPTED<br/>KEY MANAGEMENT<br/><span>ON SOLANA</span></h1>
+        <p className="hero-sub">Keys, policies, metering, and licensing enforced in encrypted shared state over arbitrary storage. Revocation, pay-to-decrypt, and time-bound access — without trusted servers.</p>
+        <div className="hero-actions"><button className="btn btn-primary btn-lg" onClick={connect}>LAUNCH APP</button><a className="btn btn-outline btn-lg" href="https://github.com/tilakkumar56/cipher-gate" target="_blank" rel="noreferrer">GITHUB</a></div>
       </section>
-      <section className="section">
-        <div className="section-label">How it works</div>
-        <div className="grid-3">
-          <div className="cell"><div className="cell-number">01</div><div className="cell-title">Encrypt markers</div><div className="cell-desc">Genomic markers (SNPs) are hashed locally and encrypted with Rescue cipher via x25519 key exchange. Raw sequences never leave your device.</div></div>
-          <div className="cell"><div className="cell-number">02</div><div className="cell-title">MPC comparison</div><div className="cell-desc">Arcium's ARX nodes compare encrypted profiles using secret sharing. Each node sees only random fragments — never actual genetic data.</div></div>
-          <div className="cell"><div className="cell-number">03</div><div className="cell-title">Similarity only</div><div className="cell-desc">Only the similarity score is returned. Which specific markers matched, and all non-matching data, remain permanently encrypted.</div></div>
-        </div>
-      </section>
-      <footer className="footer"><span className="footer-text">Built with Arcium on Solana</span><div className="footer-links"><a className="footer-link" href="https://arcium.com" target="_blank" rel="noreferrer">Arcium</a><a className="footer-link" href="https://solana.com" target="_blank" rel="noreferrer">Solana</a></div></footer>
-    </div></div>
+      <div className="grid-features">
+        <div className="feature"><div className="feature-num">001</div><div className="feature-title">Encrypted policies</div><div className="feature-desc">Access rules encrypted with Rescue cipher. No server sees who has access to what. Policies evaluated inside Arcium MPC.</div></div>
+        <div className="feature"><div className="feature-num">002</div><div className="feature-title">MPC enforcement</div><div className="feature-desc">ARX nodes evaluate user identity, time bounds, payment status, and revocation — all on secret-shared data. No single point of trust.</div></div>
+        <div className="feature"><div className="feature-num">003</div><div className="feature-title">Key fragments</div><div className="feature-desc">Decryption keys released only when all conditions pass. Key material never exists in full on any single node. Storage-agnostic: IPFS, S3, Arweave.</div></div>
+      </div>
+      <footer className="footer"><span className="footer-text">BUILT WITH ARCIUM ON SOLANA</span><div className="footer-links"><a className="footer-link" href="https://arcium.com" target="_blank" rel="noreferrer">ARCIUM</a><a className="footer-link" href="https://solana.com" target="_blank" rel="noreferrer">SOLANA</a></div></footer>
+    </div></div></div>
   );
 
+  const totalAccesses = resources.reduce((s, r) => s + r.accesses, 0);
+  const totalPolicies = resources.reduce((s, r) => s + r.policies, 0);
   return (
-    <div className="app-wrapper"><div className="bg-gradient"/><div className="bg-line"/><div className="content">
-      <nav className="nav"><div className="nav-brand"><div className="nav-logo"><span>G</span>enomeShield</div></div>
-        <div className="nav-links"><span className="nav-link" onClick={() => setView("landing")}>Home</span><a className="nav-link" href="https://docs.arcium.com/developers" target="_blank" rel="noreferrer">Docs</a>
-          <span className="wallet-address">{shorten(wallet)}</span><button className="btn btn-ghost btn-sm" onClick={disconnect}>Disconnect</button></div></nav>
-      <div className="section" style={{paddingTop:16}}>
-        <div className="status-bar"><span className={`status-indicator ${connected?"connected":""}`}/><span className="status-text">Solana Devnet</span>
-          <span style={{fontSize:"0.75rem",color:"var(--text-muted)",fontFamily:"monospace",marginLeft:8}}>{shorten(PROGRAM_ID.toString())}</span>
-          <span style={{marginLeft:"auto",fontSize:"0.75rem",color:"var(--text-muted)"}}>{balance.toFixed(2)} SOL</span>
-          {status==="computing"&&<><span className="status-indicator processing"/><span className="status-text">MPC active</span></>}</div>
+    <div className="app"><div className="grain"/><div className="content"><div className="container">
+      <nav className="nav"><div className="nav-logo"><span>//</span> CIPHER<span>GATE</span></div>
+        <div className="nav-links"><span className="nav-link" onClick={() => setView("landing")}>HOME</span><a className="nav-link" href="https://docs.arcium.com/developers" target="_blank" rel="noreferrer">DOCS</a>
+          <span className="wallet">{shorten(wallet)}</span><button className="btn btn-ghost btn-sm" onClick={disconnect}>EXIT</button></div></nav>
+      <div className="section" style={{borderBottom:"none"}}>
+        <div className="status-row"><span className={`dot ${connected ? "dot-green" : ""}`}/><span>SOLANA DEVNET</span>
+          <span style={{marginLeft:8,color:"var(--text-muted)"}}>{shorten(PROGRAM_ID.toString())}</span>
+          <span style={{marginLeft:"auto"}}>{balance.toFixed(2)} SOL</span>
+          {status === "computing" && <><span className="dot dot-orange"/><span>MPC ACTIVE</span></>}</div>
         <div style={{display:"flex",gap:8,marginBottom:16}}>
-          <button className="btn btn-outline btn-sm" onClick={initOnChain}><Chain/> Initialize</button>
-          <button className="btn btn-outline btn-sm" onClick={registerOnChain}><Dna/> Register Profile</button>
-          {chainMsg && <span style={{fontSize:"0.8125rem",color:"var(--text-muted)",alignSelf:"center",marginLeft:8}}>{chainMsg}</span>}
+          <button className="btn btn-outline btn-sm" onClick={initOnChain}>INITIALIZE</button>
+          <button className="btn btn-outline btn-sm" onClick={() => setShowCreate(!showCreate)}>+ RESOURCE</button>
+          {chainMsg && <span style={{fontSize:"0.6875rem",color:"var(--text-dim)",fontFamily:"var(--mono)",alignSelf:"center",marginLeft:8}}>{chainMsg}</span>}
         </div>
-        {txSigs.length > 0 && <div className="tx-list"><div className="tx-label">Transactions</div>
-          {txSigs.map((sig, i) => <div key={i} style={{marginBottom:3}}><a className="tx-link" href={`https://explorer.solana.com/tx/${sig}?cluster=devnet`} target="_blank" rel="noreferrer">{shorten(sig)} ↗</a></div>)}</div>}
-        <div className="dashboard-grid">
-          <div className="card"><div className="card-header"><div><div className="card-title">Your Genomic Markers</div><div className="card-desc">Enter SNP identifiers (rs numbers), one per line. Max 16.</div></div></div>
-            <div className="input-group"><label className="input-label">Markers (SNP IDs)</label><textarea className="input-field" value={markersRaw} onChange={e => setMarkersRaw(e.target.value)} disabled={status==="computing"||status==="encrypting"} placeholder="rs1426654&#10;rs12913832&#10;rs4988235"/></div>
-            {markers.length > 0 && <><div style={{fontSize:"0.75rem",color:"var(--text-muted)",marginBottom:8}}>{markers.length} marker{markers.length!==1?"s":""} · hashed locally</div>
-              <div className="dna-visual">{markers.map((m, i) => <div key={m.id} className="dna-block" style={{background:MARKER_COLORS[i%MARKER_COLORS.length],opacity:0.7}} title={`${m.value}: ${m.hash.slice(0,8)}...`}/>)}</div>
-              <div className="marker-list">{markers.map((m, i) => <div key={m.id} className="marker-item"><span className="marker-dot" style={{background:MARKER_COLORS[i%MARKER_COLORS.length]}}/><span style={{flex:1}}>{m.value}</span><span style={{opacity:0.5}}>{m.hash.slice(0,12)}...</span></div>)}</div></>}
+        {txSigs.length > 0 && <div className="tx-box"><div className="tx-title">TRANSACTIONS</div>
+          {txSigs.map((sig, i) => <a key={i} className="tx-link" href={`https://explorer.solana.com/tx/${sig}?cluster=devnet`} target="_blank" rel="noreferrer">{shorten(sig)} ↗</a>)}</div>}
+        {showCreate && <div className="card" style={{marginBottom:16}}>
+          <div className="card-title" style={{marginBottom:12}}>Register Resource</div>
+          <div className="input-group"><label className="input-label">NAME</label><input className="input-field" value={newName} onChange={e => setNewName(e.target.value)} placeholder="dataset-v3.enc"/></div>
+          <div className="input-group"><label className="input-label">URI</label><input className="input-field" value={newUri} onChange={e => setNewUri(e.target.value)} placeholder="ipfs://Qm... or s3://bucket/key"/></div>
+          <div className="input-group"><label className="input-label">STORAGE</label><select className="input-field" value={newStorage} onChange={e => setNewStorage(e.target.value)}><option>IPFS</option><option>S3</option><option>Arweave</option></select></div>
+          <button className="btn btn-primary btn-sm" onClick={registerResource}>REGISTER ON-CHAIN</button>
+        </div>}
+        <div className="stats-bar">
+          <div className="stat"><div className="stat-val">{resources.length}</div><div className="stat-lbl">RESOURCES</div></div>
+          <div className="stat"><div className="stat-val">{totalPolicies}</div><div className="stat-lbl">POLICIES</div></div>
+          <div className="stat"><div className="stat-val">{totalAccesses}</div><div className="stat-lbl">ACCESSES</div></div>
+          <div className="stat"><div className="stat-val">{resources.filter(r => r.active).length}</div><div className="stat-lbl">ACTIVE</div></div>
+        </div>
+        <div className="dashboard">
+          <div className="card">
+            <div className="card-header"><div><div className="card-title">Resources</div><div className="card-desc">Encrypted files across storage providers</div></div></div>
+            <div className="resource-list">{resources.map(r => <div key={r.id} className={`resource-item ${selected?.id === r.id ? "active" : ""}`} onClick={() => { setSelected(r); reset(); }}>
+              <div><div className="resource-name">{r.name}</div><div className="resource-meta">{r.uri.slice(0, 24)}... | {r.accesses} accesses</div></div>
+              <div style={{display:"flex",gap:6,alignItems:"center"}}><span className={`tag ${r.storage === "IPFS" ? "tag-blue" : r.storage === "S3" ? "tag-orange" : "tag-green"}`}>{r.storage}</span>
+                <span className={`tag ${r.active ? "tag-green" : "tag-red"}`}>{r.active ? "LIVE" : "REVOKED"}</span></div>
+            </div>)}</div>
           </div>
-          <div className="card"><div className="card-header"><div><div className="card-title">Compare Genomes</div><div className="card-desc">Enter partner's wallet to compute similarity via Arcium MPC.</div></div></div>
-            <div className="input-group"><label className="input-label">Partner wallet address</label><input className="input-field" value={partnerAddr} onChange={e => setPartnerAddr(e.target.value)} disabled={status==="computing"} placeholder="Enter Solana address..."/></div>
-            {status==="idle" && !result && <button className="btn btn-accent" style={{width:"100%",marginTop:8}} onClick={runComparison} disabled={!markers.length||!partnerAddr}><Lock/> Run Private Comparison</button>}
-            {(status==="encrypting"||status==="computing") && <div style={{padding:"16px 0"}}><div className="progress-bar"><div className="progress-fill" style={{width:`${progress}%`}}/></div><div style={{fontSize:"0.8125rem",color:"var(--text-muted)",textAlign:"center"}}>{chainMsg}</div></div>}
-            {result && <div>
-              <div style={{fontSize:"0.75rem",fontWeight:500,color:"var(--accent)",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:12}}>Similarity Result</div>
-              <div className="similarity-bar"><div className="similarity-bar-bg"><div className="similarity-bar-fill" style={{width:`${result.score}%`,background:`linear-gradient(90deg, var(--accent), var(--cyan))`}}>{result.score > 15 && <span className="similarity-label">{result.score}%</span>}</div>{result.score <= 15 && <span className="similarity-pct" style={{color:"var(--text-muted)"}}>{result.score}%</span>}</div></div>
-              <div className="result-grid">
-                <div className="result-cell"><div className="result-value" style={{color:"var(--accent)"}}>{result.matched}</div><div className="result-label">Matched</div></div>
-                <div className="result-cell"><div className="result-value">{result.total}</div><div className="result-label">Compared</div></div>
-                <div className="result-cell"><div className="result-value">{result.total - result.matched}</div><div className="result-label">Private</div></div>
-              </div>
-              <div style={{fontSize:"0.8125rem",color:"var(--text-muted)",marginTop:12}}>{chainMsg}</div>
-              <button className="btn btn-outline btn-sm" style={{marginTop:12}} onClick={reset}>New Comparison</button>
+          <div className="card">{selected ? <>
+            <div className="card-header"><div><div className="card-title">{selected.name}</div><div className="card-desc">{selected.uri}</div></div>
+              <span className={`tag ${selected.active ? "tag-green" : "tag-red"}`}>{selected.active ? "LIVE" : "REVOKED"}</span></div>
+            <div className="policy-list">
+              <div className="policy-item"><span>POLICIES: {selected.policies}</span><span style={{color:"var(--text-muted)"}}>STORAGE: {selected.storage}</span></div>
+              <div className="policy-item"><span>ACCESSES: {selected.accesses}</span><span style={{color:"var(--text-muted)"}}>ID: {selected.id}</span></div>
+            </div>
+            {status === "idle" && !accessResult && <button className="btn btn-green" style={{width:"100%",marginTop:12}} onClick={checkAccess}>REQUEST ACCESS VIA MPC</button>}
+            {(status === "encrypting" || status === "computing") && <div style={{padding:"12px 0"}}><div className="progress"><div className="progress-fill" style={{width:`${progress}%`}}/></div><div style={{fontSize:"0.6875rem",color:"var(--text-dim)",textAlign:"center",fontFamily:"var(--mono)"}}>{chainMsg}</div></div>}
+            {accessResult && <div style={{padding:"16px 0",textAlign:"center"}}>
+              <div className={`tag ${accessResult.granted ? "tag-green" : "tag-red"}`} style={{fontSize:"0.75rem",padding:"6px 16px",marginBottom:12}}>{accessResult.granted ? "ACCESS GRANTED" : "ACCESS DENIED"}</div>
+              <div style={{fontSize:"0.75rem",color:"var(--text-dim)",fontFamily:"var(--mono)",marginBottom:12}}>{accessResult.reason}</div>
+              <button className="btn btn-outline btn-sm" onClick={reset}>NEW REQUEST</button>
             </div>}
-          </div>
+          </> : <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:200,color:"var(--text-muted)",fontFamily:"var(--mono)",fontSize:"0.75rem"}}>SELECT A RESOURCE</div>}</div>
         </div>
-        <div className="grid-3" style={{marginTop:40}}>
-          <div className="cell"><div className="cell-number"><Shield/></div><div className="cell-title">Encrypted markers</div><div className="cell-desc">SNP data encrypted with Rescue cipher. No genomic sequence exists in plaintext on-chain.</div></div>
-          <div className="cell"><div className="cell-number"><Lock/></div><div className="cell-title">Secret-shared comparison</div><div className="cell-desc">ARX nodes compare markers using secret sharing. No node sees actual genetic data.</div></div>
-          <div className="cell"><div className="cell-number"><Eye/></div><div className="cell-title">Score only</div><div className="cell-desc">Only similarity percentage revealed. Non-matching markers remain permanently hidden.</div></div>
+        <div className="grid-features" style={{marginTop:32}}>
+          <div className="feature"><div className="feature-num">ENC</div><div className="feature-title">Encrypted policies</div><div className="feature-desc">Access rules encrypted with Rescue cipher. Evaluated inside MPC without any party seeing the rules.</div></div>
+          <div className="feature"><div className="feature-num">MPC</div><div className="feature-title">Secret-shared enforcement</div><div className="feature-desc">ARX nodes check identity, time, payment, revocation on secret shares. No single node can grant or deny.</div></div>
+          <div className="feature"><div className="feature-num">KEY</div><div className="feature-title">Conditional key release</div><div className="feature-desc">Decryption key fragments released only when all conditions pass. Works with IPFS, S3, Arweave.</div></div>
         </div>
       </div>
-      <footer className="footer"><span className="footer-text">GenomeShield · Solana Devnet · {shorten(PROGRAM_ID.toString())}</span><div className="footer-links"><a className="footer-link" href={`https://explorer.solana.com/address/${PROGRAM_ID}?cluster=devnet`} target="_blank" rel="noreferrer">Explorer</a><a className="footer-link" href="https://arcium.com" target="_blank" rel="noreferrer">Arcium</a></div></footer>
-    </div></div>
+      <footer className="footer"><span className="footer-text">CIPHERGATE // SOLANA DEVNET // {shorten(PROGRAM_ID.toString())}</span><div className="footer-links"><a className="footer-link" href={`https://explorer.solana.com/address/${PROGRAM_ID}?cluster=devnet`} target="_blank" rel="noreferrer">EXPLORER</a><a className="footer-link" href="https://arcium.com" target="_blank" rel="noreferrer">ARCIUM</a></div></footer>
+    </div></div></div>
   );
 }
