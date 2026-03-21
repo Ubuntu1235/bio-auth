@@ -1,120 +1,94 @@
-# Structure of this project
+# BioAuth - Private Biometric Authentication on Solana
 
-This project is structured pretty similarly to how a regular Solana Anchor project is structured. The main difference lies in there being two places to write code here:
+Privacy-preserving biometric login powered by Arcium MPC. Templates are secret-shared and matching runs privately. Apps learn only match or no-match.
 
-- The `programs` dir like usual Anchor programs
-- The `encrypted-ixs` dir for confidential computing instructions
+Live Demo: https://musical-tapioca-e660ec.netlify.app
 
-When working with plaintext data, we can edit it inside our program as normal. When working with confidential data though, state transitions take place off-chain using the Arcium network as a co-processor. For this, we then always need two instructions in our program: one that gets called to initialize a confidential computation, and one that gets called when the computation is done and supplies the resulting data. Additionally, since the types and operations in a Solana program and in a confidential computing environment are a bit different, we define the operations themselves in the `encrypted-ixs` dir using our Rust-based framework called Arcis. To link all of this together, we provide a few macros that take care of ensuring the correct accounts and data are passed for the specific initialization and callback functions:
+Program ID: 4rfPEFE5wSfqQMG7bw5MqPrwA9KSsYsi5sVaWRsY1ShU (Solana Devnet)
 
-```rust
-// encrypted-ixs/add_together.rs
+Explorer: https://explorer.solana.com/address/4rfPEFE5wSfqQMG7bw5MqPrwA9KSsYsi5sVaWRsY1ShU?cluster=devnet
 
-use arcis::*;
+## The Problem
 
-#[encrypted]
-mod circuits {
-    use arcis::*;
+Biometric auth today is device-siloed and vendor-locked. Templates stored on centralized servers create catastrophic breach risks. Unlike passwords, biometric data cannot be changed if compromised.
 
-    pub struct InputValues {
-        v1: u8,
-        v2: u8,
-    }
+## The Solution
 
-    #[instruction]
-    pub fn add_together(input_ctxt: Enc<Shared, InputValues>) -> Enc<Shared, u16> {
-        let input = input_ctxt.to_arcis();
-        let sum = input.v1 as u16 + input.v2 as u16;
-        input_ctxt.owner.from_arcis(sum)
-    }
-}
+BioAuth uses Arcium MPC to perform biometric matching on encrypted data. Templates are secret-shared across ARX nodes. The verify_biometric circuit compares feature vectors without any node seeing the raw biometric data. Apps receive only match or no-match.
 
-// programs/my_program/src/lib.rs
+## How Arcium Enables This
 
-use anchor_lang::prelude::*;
-use arcium_anchor::prelude::*;
+Step 1: Templates encrypted with Rescue cipher via x25519 key exchange. Raw biometric data never leaves the device.
 
-declare_id!("<some ID>");
+Step 2: Encrypted templates submitted to Arcium ARX nodes. Using secret sharing, each node sees only random fragments.
 
-#[arcium_program]
-pub mod my_program {
-    use super::*;
+Step 3: verify_biometric circuit compares 8 feature vectors on secret-shared data. 70 percent similarity threshold checked entirely inside MPC.
 
-    pub fn init_add_together_comp_def(ctx: Context<InitAddTogetherCompDef>) -> Result<()> {
-        init_comp_def(ctx.accounts, None, None)?;
-        Ok(())
-    }
+Step 4: Only boolean match/no-match result returned. Similarity scores, feature vectors, and raw data remain permanently hidden.
 
-    pub fn add_together(
-        ctx: Context<AddTogether>,
-        computation_offset: u64,
-        ciphertext_0: [u8; 32],
-        ciphertext_1: [u8; 32],
-        pubkey: [u8; 32],
-        nonce: u128,
-    ) -> Result<()> {
-        ctx.accounts.sign_pda_account.bump = ctx.bumps.sign_pda_account;
-        let args = ArgBuilder::new()
-            .x25519_pubkey(pubkey)
-            .plaintext_u128(nonce)
-            .encrypted_u8(ciphertext_0)
-            .encrypted_u8(ciphertext_1)
-            .build();
+## Privacy Guarantees
 
-        queue_computation(
-            ctx.accounts,
-            computation_offset,
-            args,
-            vec![AddTogetherCallback::callback_ix(
-                computation_offset,
-                &ctx.accounts.mxe_account,
-                &[]
-            )?],
-            1,
-            0,
-        )?;
-        Ok(())
-    }
+- Template secrecy: Raw biometric data never exists on-chain or in any node
+- Vendor agnostic: Works across devices without hardware dependency
+- Portable identity: Same encrypted template usable across apps
+- Full-threshold security: ALL ARX nodes must collude to break privacy
+- Immutable protection: Biometric data cannot be changed if leaked
 
-    #[arcium_callback(encrypted_ix = "add_together")]
-    pub fn add_together_callback(
-        ctx: Context<AddTogetherCallback>,
-        output: SignedComputationOutputs<AddTogetherOutput>,
-    ) -> Result<()> {
-        let o = match output.verify_output(&ctx.accounts.cluster_account, &ctx.accounts.computation_account) {
-            Ok(AddTogetherOutput { field_0 }) => field_0,
-            Err(_) => return Err(ErrorCode::AbortedComputation.into()),
-        };
+## Technical Implementation
 
-        emit!(SumEvent {
-            sum: o.ciphertexts[0],
-            nonce: o.nonce.to_le_bytes(),
-        });
-        Ok(())
-    }
-}
+### Arcis Circuit (encrypted-ixs/src/lib.rs)
+- BiometricTemplate: features [u128; 8] + count (u8)
+- AuthResult: is_match (u8) + similarity (u128) + compared (u8)
+- Compares 8 feature positions with secret-shared equality checks
+- Similarity = (matched * 10000) / compared
+- 70 percent threshold: is_match = 1 if similarity >= 7000
 
-#[queue_computation_accounts("add_together", payer)]
-#[derive(Accounts)]
-#[instruction(computation_offset: u64)]
-pub struct AddTogether<'info> {
-    #[account(mut)]
-    pub payer: Signer<'info>,
-    // ... other required accounts
-}
+### Solana Program (programs/bio_auth/src/lib.rs)
+- initialize: program state
+- register_identity: register biometric template hash on-chain
+- init_verify_biometric_comp_def: register MPC circuit
+- verify_biometric: encrypt and queue via ArgBuilder + queue_computation
+- verify_biometric_callback: verified via SignedComputationOutputs
+- Accounts: ProgramState, Identity, AuthLog
 
-#[callback_accounts("add_together")]
-#[derive(Accounts)]
-pub struct AddTogetherCallback<'info> {
-    // ... required accounts
-    pub some_extra_acc: AccountInfo<'info>,
-}
+### Integration Test (tests/bio_auth.ts)
+Full MPC flow using Arcium client SDK:
+- Real Rescue cipher encryption with x25519 key exchange
+- Real queue_computation call to Arcium MPC network
+- Real awaitComputationFinalization for MPC result
+- Uses getMXEPublicKey, RescueCipher, serializeLE from arcium-hq/client
 
-#[init_computation_definition_accounts("add_together", payer)]
-#[derive(Accounts)]
-pub struct InitAddTogetherCompDef<'info> {
-    #[account(mut)]
-    pub payer: Signer<'info>,
-    // ... other required accounts
-}
-```
+### Frontend (app/)
+- React + TypeScript + Vite with Anchor SDK
+- Real on-chain transactions (initialize, register identity)
+- Biometric scan animation with feature grid visualization
+- Stacks-inspired warm dark UI
+- Phantom wallet integration
+
+## How to Test
+
+1. Install Phantom wallet, switch to Devnet
+2. Get devnet SOL from faucet
+3. Visit https://musical-tapioca-e660ec.netlify.app
+4. Connect wallet
+5. Click Initialize - real Solana devnet transaction
+6. Click Register Template - registers biometric identity on-chain
+7. Select a template and click Verify Identity via MPC
+8. Watch biometric scan and MPC verification progress
+9. Verify transactions on Solana Explorer
+
+For full MPC flow: arcium test --cluster devnet
+
+## Deployed on Solana Devnet
+
+- Program: 4rfPEFE5wSfqQMG7bw5MqPrwA9KSsYsi5sVaWRsY1ShU
+- MXE: Successfully initialized with cluster migration
+- Demo: https://musical-tapioca-e660ec.netlify.app
+
+## Tech Stack
+
+Solana - Arcium - Arcis - Anchor 0.32.1 - React + Vite - Phantom
+
+## License
+
+MIT
