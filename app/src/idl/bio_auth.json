@@ -1,390 +1,23 @@
 {
-  "address": "2mytDh5J6gN1BAyrwgGfdrCPHAe6v6BbGTbTDANVQXKP",
+  "address": "4rfPEFE5wSfqQMG7bw5MqPrwA9KSsYsi5sVaWRsY1ShU",
   "metadata": {
-    "name": "cipher_gate",
+    "name": "bio_auth",
     "version": "0.1.0",
     "spec": "0.1.0",
     "description": "Created with Arcium & Anchor"
   },
   "instructions": [
     {
-      "name": "add_policy",
+      "name": "init_verify_biometric_comp_def",
       "discriminator": [
-        62,
-        42,
-        248,
-        232,
-        151,
-        140,
-        199,
-        59
-      ],
-      "accounts": [
-        {
-          "name": "authority",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "resource",
-          "writable": true
-        }
-      ],
-      "args": [
-        {
-          "name": "allowed_user",
-          "type": "pubkey"
-        },
-        {
-          "name": "expiry_time",
-          "type": "i64"
-        },
-        {
-          "name": "min_payment",
-          "type": "u64"
-        }
-      ]
-    },
-    {
-      "name": "check_access",
-      "discriminator": [
-        74,
-        62,
-        42,
-        188,
-        96,
-        229,
-        63,
-        50
-      ],
-      "accounts": [
-        {
-          "name": "payer",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "sign_pda_account",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  65,
-                  114,
-                  99,
-                  105,
-                  117,
-                  109,
-                  83,
-                  105,
-                  103,
-                  110,
-                  101,
-                  114,
-                  65,
-                  99,
-                  99,
-                  111,
-                  117,
-                  110,
-                  116
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "mxe_account"
-        },
-        {
-          "name": "mempool_account",
-          "writable": true
-        },
-        {
-          "name": "executing_pool",
-          "writable": true
-        },
-        {
-          "name": "computation_account",
-          "writable": true
-        },
-        {
-          "name": "comp_def_account"
-        },
-        {
-          "name": "cluster_account",
-          "writable": true
-        },
-        {
-          "name": "pool_account",
-          "writable": true,
-          "address": "G2sRWJvi3xoyh5k2gY49eG9L8YhAEWQPtNb1zb1GXTtC"
-        },
-        {
-          "name": "clock_account",
-          "writable": true,
-          "address": "7EbMUTLo5DjdzbN7s8BXeZwXzEwNQb1hScfRvWg8a6ot"
-        },
-        {
-          "name": "access_log",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  97,
-                  99,
-                  99,
-                  101,
-                  115,
-                  115,
-                  95,
-                  108,
-                  111,
-                  103
-                ]
-              },
-              {
-                "kind": "arg",
-                "path": "computation_offset"
-              }
-            ]
-          }
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        },
-        {
-          "name": "arcium_program",
-          "address": "Arcj82pX7HxYKLR92qvgZUAd7vGS1k4hQvAFcPATFdEQ"
-        }
-      ],
-      "args": [
-        {
-          "name": "computation_offset",
-          "type": "u64"
-        },
-        {
-          "name": "ct_requester_id",
-          "type": {
-            "array": [
-              "u8",
-              32
-            ]
-          }
-        },
-        {
-          "name": "ct_resource_id",
-          "type": {
-            "array": [
-              "u8",
-              32
-            ]
-          }
-        },
-        {
-          "name": "ct_timestamp",
-          "type": {
-            "array": [
-              "u8",
-              32
-            ]
-          }
-        },
-        {
-          "name": "ct_payment",
-          "type": {
-            "array": [
-              "u8",
-              32
-            ]
-          }
-        },
-        {
-          "name": "pub_key_req",
-          "type": {
-            "array": [
-              "u8",
-              32
-            ]
-          }
-        },
-        {
-          "name": "nonce_req",
-          "type": "u128"
-        },
-        {
-          "name": "ct_pol_resource_id",
-          "type": {
-            "array": [
-              "u8",
-              32
-            ]
-          }
-        },
-        {
-          "name": "ct_pol_owner_id",
-          "type": {
-            "array": [
-              "u8",
-              32
-            ]
-          }
-        },
-        {
-          "name": "ct_allowed",
-          "type": {
-            "array": [
-              {
-                "array": [
-                  "u8",
-                  32
-                ]
-              },
-              8
-            ]
-          }
-        },
-        {
-          "name": "ct_expiries",
-          "type": {
-            "array": [
-              {
-                "array": [
-                  "u8",
-                  32
-                ]
-              },
-              8
-            ]
-          }
-        },
-        {
-          "name": "ct_min_pays",
-          "type": {
-            "array": [
-              {
-                "array": [
-                  "u8",
-                  32
-                ]
-              },
-              8
-            ]
-          }
-        },
-        {
-          "name": "ct_pol_count",
-          "type": {
-            "array": [
-              "u8",
-              32
-            ]
-          }
-        },
-        {
-          "name": "ct_revoked",
-          "type": {
-            "array": [
-              {
-                "array": [
-                  "u8",
-                  32
-                ]
-              },
-              8
-            ]
-          }
-        },
-        {
-          "name": "pub_key_pol",
-          "type": {
-            "array": [
-              "u8",
-              32
-            ]
-          }
-        },
-        {
-          "name": "nonce_pol",
-          "type": "u128"
-        }
-      ]
-    },
-    {
-      "name": "check_access_callback",
-      "discriminator": [
-        210,
-        63,
-        194,
-        44,
-        80,
-        104,
-        96,
-        150
-      ],
-      "accounts": [
-        {
-          "name": "arcium_program",
-          "address": "Arcj82pX7HxYKLR92qvgZUAd7vGS1k4hQvAFcPATFdEQ"
-        },
-        {
-          "name": "comp_def_account"
-        },
-        {
-          "name": "mxe_account"
-        },
-        {
-          "name": "computation_account"
-        },
-        {
-          "name": "cluster_account"
-        },
-        {
-          "name": "instructions_sysvar",
-          "address": "Sysvar1nstructions1111111111111111111111111"
-        },
-        {
-          "name": "access_log",
-          "writable": true
-        }
-      ],
-      "args": [
-        {
-          "name": "output",
-          "type": {
-            "defined": {
-              "name": "SignedComputationOutputs",
-              "generics": [
-                {
-                  "kind": "type",
-                  "type": {
-                    "defined": {
-                      "name": "CheckAccessOutput"
-                    }
-                  }
-                }
-              ]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "init_check_access_comp_def",
-      "discriminator": [
-        119,
-        207,
-        193,
-        148,
-        10,
-        207,
-        96,
-        243
+        18,
+        134,
+        52,
+        254,
+        37,
+        162,
+        249,
+        20
       ],
       "accounts": [
         {
@@ -471,16 +104,16 @@
       "args": []
     },
     {
-      "name": "register_resource",
+      "name": "register_identity",
       "discriminator": [
-        87,
-        209,
         164,
-        28,
-        6,
-        82,
-        232,
-        214
+        118,
+        227,
+        177,
+        47,
+        176,
+        187,
+        248
       ],
       "accounts": [
         {
@@ -489,8 +122,29 @@
           "signer": true
         },
         {
-          "name": "resource",
-          "writable": true
+          "name": "identity",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  100,
+                  101,
+                  110,
+                  116,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
         },
         {
           "name": "program_state",
@@ -525,64 +179,276 @@
       ],
       "args": [
         {
-          "name": "resource_name",
-          "type": "string"
+          "name": "identity_hash",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
         },
         {
-          "name": "resource_uri",
-          "type": "string"
-        },
-        {
-          "name": "storage_type",
+          "name": "template_type",
           "type": "u8"
         }
       ]
     },
     {
-      "name": "revoke_access",
+      "name": "verify_biometric",
       "discriminator": [
-        106,
-        128,
-        38,
-        169,
-        103,
-        238,
-        102,
-        147
+        213,
+        195,
+        207,
+        141,
+        10,
+        90,
+        193,
+        62
       ],
       "accounts": [
         {
-          "name": "authority",
+          "name": "payer",
           "writable": true,
           "signer": true
         },
         {
-          "name": "resource",
+          "name": "sign_pda_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  65,
+                  114,
+                  99,
+                  105,
+                  117,
+                  109,
+                  83,
+                  105,
+                  103,
+                  110,
+                  101,
+                  114,
+                  65,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "mxe_account"
+        },
+        {
+          "name": "mempool_account",
+          "writable": true
+        },
+        {
+          "name": "executing_pool",
+          "writable": true
+        },
+        {
+          "name": "computation_account",
+          "writable": true
+        },
+        {
+          "name": "comp_def_account"
+        },
+        {
+          "name": "cluster_account",
+          "writable": true
+        },
+        {
+          "name": "pool_account",
+          "writable": true,
+          "address": "G2sRWJvi3xoyh5k2gY49eG9L8YhAEWQPtNb1zb1GXTtC"
+        },
+        {
+          "name": "clock_account",
+          "writable": true,
+          "address": "7EbMUTLo5DjdzbN7s8BXeZwXzEwNQb1hScfRvWg8a6ot"
+        },
+        {
+          "name": "auth_log",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  117,
+                  116,
+                  104,
+                  95,
+                  108,
+                  111,
+                  103
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "computation_offset"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "arcium_program",
+          "address": "Arcj82pX7HxYKLR92qvgZUAd7vGS1k4hQvAFcPATFdEQ"
+        }
+      ],
+      "args": [
+        {
+          "name": "computation_offset",
+          "type": "u64"
+        },
+        {
+          "name": "ct_stored_features",
+          "type": {
+            "array": [
+              {
+                "array": [
+                  "u8",
+                  32
+                ]
+              },
+              8
+            ]
+          }
+        },
+        {
+          "name": "ct_stored_count",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "pub_key_stored",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "nonce_stored",
+          "type": "u128"
+        },
+        {
+          "name": "ct_live_features",
+          "type": {
+            "array": [
+              {
+                "array": [
+                  "u8",
+                  32
+                ]
+              },
+              8
+            ]
+          }
+        },
+        {
+          "name": "ct_live_count",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "pub_key_live",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "nonce_live",
+          "type": "u128"
+        }
+      ]
+    },
+    {
+      "name": "verify_biometric_callback",
+      "discriminator": [
+        120,
+        159,
+        19,
+        15,
+        9,
+        158,
+        38,
+        6
+      ],
+      "accounts": [
+        {
+          "name": "arcium_program",
+          "address": "Arcj82pX7HxYKLR92qvgZUAd7vGS1k4hQvAFcPATFdEQ"
+        },
+        {
+          "name": "comp_def_account"
+        },
+        {
+          "name": "mxe_account"
+        },
+        {
+          "name": "computation_account"
+        },
+        {
+          "name": "cluster_account"
+        },
+        {
+          "name": "instructions_sysvar",
+          "address": "Sysvar1nstructions1111111111111111111111111"
+        },
+        {
+          "name": "auth_log",
           "writable": true
         }
       ],
       "args": [
         {
-          "name": "policy_index",
-          "type": "u8"
+          "name": "output",
+          "type": {
+            "defined": {
+              "name": "SignedComputationOutputs",
+              "generics": [
+                {
+                  "kind": "type",
+                  "type": {
+                    "defined": {
+                      "name": "VerifyBiometricOutput"
+                    }
+                  }
+                }
+              ]
+            }
+          }
         }
       ]
     }
   ],
   "accounts": [
-    {
-      "name": "AccessLog",
-      "discriminator": [
-        99,
-        147,
-        234,
-        225,
-        53,
-        121,
-        161,
-        122
-      ]
-    },
     {
       "name": "ArciumSignerAccount",
       "discriminator": [
@@ -594,6 +460,19 @@
         44,
         214,
         74
+      ]
+    },
+    {
+      "name": "AuthLog",
+      "discriminator": [
+        84,
+        75,
+        234,
+        232,
+        244,
+        179,
+        90,
+        45
       ]
     },
     {
@@ -649,6 +528,19 @@
       ]
     },
     {
+      "name": "Identity",
+      "discriminator": [
+        58,
+        132,
+        5,
+        12,
+        176,
+        164,
+        85,
+        112
+      ]
+    },
+    {
       "name": "MXEAccount",
       "discriminator": [
         103,
@@ -673,46 +565,20 @@
         167,
         230
       ]
-    },
-    {
-      "name": "Resource",
-      "discriminator": [
-        10,
-        160,
-        2,
-        1,
-        42,
-        207,
-        51,
-        212
-      ]
     }
   ],
   "events": [
     {
-      "name": "AccessCheckedEvent",
+      "name": "VerificationEvent",
       "discriminator": [
-        5,
-        208,
-        213,
-        208,
-        37,
-        180,
-        229,
-        238
-      ]
-    },
-    {
-      "name": "AccessRevokedEvent",
-      "discriminator": [
-        0,
-        123,
-        250,
-        9,
-        94,
-        246,
-        235,
-        158
+        38,
+        156,
+        13,
+        173,
+        174,
+        118,
+        95,
+        168
       ]
     }
   ],
@@ -726,70 +592,9 @@
       "code": 6001,
       "name": "ClusterNotSet",
       "msg": "Cluster not set"
-    },
-    {
-      "code": 6002,
-      "name": "MaxPoliciesReached",
-      "msg": "Max policies reached"
     }
   ],
   "types": [
-    {
-      "name": "AccessCheckedEvent",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "log_id",
-            "type": "u64"
-          }
-        ]
-      }
-    },
-    {
-      "name": "AccessLog",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "requester",
-            "type": "pubkey"
-          },
-          {
-            "name": "resource_id",
-            "type": "u64"
-          },
-          {
-            "name": "log_id",
-            "type": "u64"
-          },
-          {
-            "name": "completed",
-            "type": "bool"
-          },
-          {
-            "name": "timestamp",
-            "type": "i64"
-          }
-        ]
-      }
-    },
-    {
-      "name": "AccessRevokedEvent",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "resource_id",
-            "type": "u64"
-          },
-          {
-            "name": "policy_index",
-            "type": "u8"
-          }
-        ]
-      }
-    },
     {
       "name": "Activation",
       "type": {
@@ -827,6 +632,30 @@
       }
     },
     {
+      "name": "AuthLog",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "requester",
+            "type": "pubkey"
+          },
+          {
+            "name": "log_id",
+            "type": "u64"
+          },
+          {
+            "name": "completed",
+            "type": "bool"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
       "name": "BN254G2BLSPublicKey",
       "type": {
         "kind": "struct",
@@ -836,32 +665,6 @@
               "u8",
               64
             ]
-          }
-        ]
-      }
-    },
-    {
-      "name": "CheckAccessOutput",
-      "docs": [
-        "The output of the callback instruction. Provided as a struct with ordered fields",
-        "as anchor does not support tuples and tuple structs yet."
-      ],
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "field_0",
-            "type": {
-              "defined": {
-                "name": "SharedEncryptedStruct",
-                "generics": [
-                  {
-                    "kind": "const",
-                    "value": "4"
-                  }
-                ]
-              }
-            }
           }
         ]
       }
@@ -1154,6 +957,47 @@
       "type": {
         "kind": "struct",
         "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Identity",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "identity_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "template_type",
+            "type": "u8"
+          },
+          {
+            "name": "verification_count",
+            "type": "u32"
+          },
+          {
+            "name": "last_verified",
+            "type": "i64"
+          },
+          {
+            "name": "active",
+            "type": "bool"
+          },
           {
             "name": "bump",
             "type": "u8"
@@ -1497,88 +1341,12 @@
             "type": "pubkey"
           },
           {
-            "name": "total_resources",
+            "name": "total_users",
             "type": "u64"
           },
           {
-            "name": "total_access_checks",
+            "name": "total_verifications",
             "type": "u64"
-          }
-        ]
-      }
-    },
-    {
-      "name": "Resource",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "owner",
-            "type": "pubkey"
-          },
-          {
-            "name": "resource_id",
-            "type": "u64"
-          },
-          {
-            "name": "name",
-            "type": "string"
-          },
-          {
-            "name": "uri",
-            "type": "string"
-          },
-          {
-            "name": "storage_type",
-            "type": "u8"
-          },
-          {
-            "name": "policy_count",
-            "type": "u8"
-          },
-          {
-            "name": "allowed_users",
-            "type": {
-              "array": [
-                "pubkey",
-                8
-              ]
-            }
-          },
-          {
-            "name": "expiry_times",
-            "type": {
-              "array": [
-                "i64",
-                8
-              ]
-            }
-          },
-          {
-            "name": "min_payments",
-            "type": {
-              "array": [
-                "u64",
-                8
-              ]
-            }
-          },
-          {
-            "name": "revoked",
-            "type": {
-              "array": [
-                "bool",
-                8
-              ]
-            }
-          },
-          {
-            "name": "total_accesses",
-            "type": "u64"
-          },
-          {
-            "name": "bump",
-            "type": "u8"
           }
         ]
       }
@@ -1755,6 +1523,44 @@
                 "u8",
                 64
               ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "VerificationEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "log_id",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "VerifyBiometricOutput",
+      "docs": [
+        "The output of the callback instruction. Provided as a struct with ordered fields",
+        "as anchor does not support tuples and tuple structs yet."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "field_0",
+            "type": {
+              "defined": {
+                "name": "SharedEncryptedStruct",
+                "generics": [
+                  {
+                    "kind": "const",
+                    "value": "3"
+                  }
+                ]
+              }
             }
           }
         ]

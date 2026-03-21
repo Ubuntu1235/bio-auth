@@ -1,7 +1,7 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { PublicKey } from "@solana/web3.js";
-import { CipherGate } from "../target/types/cipher_gate";
+import { BioAuth } from "../target/types/bio_auth";
 import { randomBytes } from "crypto";
 import {
   awaitComputationFinalization,
@@ -27,11 +27,11 @@ import * as fs from "fs";
 import * as os from "os";
 import { expect } from "chai";
 
-describe("CipherGate", () => {
+describe("BioAuth", () => {
   // Configure the client to use the local cluster.
   anchor.setProvider(anchor.AnchorProvider.env());
   const program = anchor.workspace
-    .CipherGate as Program<CipherGate>;
+    .BioAuth as Program<BioAuth>;
   const provider = anchor.getProvider();
   const arciumProgram = getArciumProgram(provider as anchor.AnchorProvider);
 
@@ -127,7 +127,7 @@ describe("CipherGate", () => {
   });
 
   async function initAddTogetherCompDef(
-    program: Program<CipherGate>,
+    program: Program<BioAuth>,
     owner: anchor.web3.Keypair,
   ): Promise<string> {
     const baseSeedCompDefAcc = getArciumAccountBaseSeed(

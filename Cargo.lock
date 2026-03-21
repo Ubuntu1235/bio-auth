@@ -884,6 +884,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "bio_auth"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "arcium-anchor",
+ "arcium-client",
+ "arcium-macros",
+]
+
+[[package]]
 name = "bitflags"
 version = "2.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1179,16 +1189,6 @@ checksum = "773f3b9af64447d2ce9850330c473515014aa235e6a783b02db81ff39e4a3dad"
 dependencies = [
  "crypto-common 0.1.7",
  "inout",
-]
-
-[[package]]
-name = "cipher_gate"
-version = "0.1.0"
-dependencies = [
- "anchor-lang",
- "arcium-anchor",
- "arcium-client",
- "arcium-macros",
 ]
 
 [[package]]
@@ -3140,9 +3140,9 @@ checksum = "f87165f0995f63a9fbeea62b64d10b4d9d8e78ec6d7d51fb2125fda7bb36788f"
 
 [[package]]
 name = "rustls-webpki"
-version = "0.103.9"
+version = "0.103.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d7df23109aa6c1567d1c575b9952556388da57401e4ace1d15f79eedad0d8f53"
+checksum = "df33b2b81ac578cabaf06b89b0631153a3f416b0a886e8a7a1707fb51abbd1ef"
 dependencies = [
  "ring",
  "rustls-pki-types",

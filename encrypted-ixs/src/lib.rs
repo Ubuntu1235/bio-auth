@@ -4,70 +4,60 @@ use arcis::*;
 mod circuits {
     use arcis::*;
 
-    const MAX_POLICIES: usize = 8;
+    const TEMPLATE_SIZE: usize = 8;
 
-    pub struct AccessRequest {
-        requester_id: u128,
-        resource_id: u128,
-        timestamp: u128,
-        payment_amount: u128,
+    pub struct BiometricTemplate {
+        features: [u128; TEMPLATE_SIZE],
+        count: u8,
     }
 
-    pub struct AccessPolicy {
-        resource_id: u128,
-        owner_id: u128,
-        allowed_users: [u128; MAX_POLICIES],
-        expiry_times: [u128; MAX_POLICIES],
-        min_payments: [u128; MAX_POLICIES],
-        policy_count: u8,
-        revoked: [bool; MAX_POLICIES],
-    }
-
-    pub struct AccessResult {
-        granted: u8,
-        decryption_key_fragment: u128,
-        policy_index: u8,
-        reason_code: u8,
+    pub struct AuthResult {
+        is_match: u8,
+        similarity: u128,
+        compared: u8,
     }
 
     #[instruction]
-    pub fn check_access(
-        request: Enc<Shared, AccessRequest>,
-        policy: Enc<Shared, AccessPolicy>,
-    ) -> Enc<Shared, AccessResult> {
-        let req = request.to_arcis();
-        let pol = policy.to_arcis();
+    pub fn verify_biometric(
+        stored_template: Enc<Shared, BiometricTemplate>,
+        live_scan: Enc<Shared, BiometricTemplate>,
+    ) -> Enc<Shared, AuthResult> {
+        let stored = stored_template.to_arcis();
+        let live = live_scan.to_arcis();
 
-        let mut granted: u8 = 0;
-        let mut key_fragment: u128 = 0;
-        let mut matched_idx: u8 = 0;
-        let mut reason: u8 = 1;
+        let mut matched: u8 = 0;
+        let mut compared: u8 = 0;
 
-        for i in 0..MAX_POLICIES {
-            let valid_policy = (i as u8) < pol.policy_count;
-            let user_match = pol.allowed_users[i] == req.requester_id;
-            let not_expired = req.timestamp <= pol.expiry_times[i];
-            let paid_enough = req.payment_amount >= pol.min_payments[i];
-            let not_revoked = !pol.revoked[i];
-            let resource_match = pol.resource_id == req.resource_id;
+        for i in 0..TEMPLATE_SIZE {
+            let s_valid = (i as u8) < stored.count;
+            let l_valid = (i as u8) < live.count;
+            let both_valid = s_valid && l_valid;
+            let features_match = stored.features[i] == live.features[i];
+            let non_zero = stored.features[i] != 0;
 
-            let all_pass = valid_policy && user_match && not_expired && paid_enough && not_revoked && resource_match;
-
-            if all_pass {
-                granted = 1;
-                key_fragment = pol.owner_id + req.requester_id + req.resource_id;
-                matched_idx = i as u8;
-                reason = 0;
+            if both_valid {
+                compared = compared + 1;
+            }
+            if both_valid && features_match && non_zero {
+                matched = matched + 1;
             }
         }
 
-        let result = AccessResult {
-            granted,
-            decryption_key_fragment: key_fragment,
-            policy_index: matched_idx,
-            reason_code: reason,
+        let similarity: u128 = if compared > 0 {
+            (matched as u128) * 10000 / (compared as u128)
+        } else {
+            0
         };
 
-        request.owner.from_arcis(result)
+        let threshold: u128 = 7000;
+        let is_match: u8 = if similarity >= threshold { 1 } else { 0 };
+
+        let result = AuthResult {
+            is_match,
+            similarity,
+            compared,
+        };
+
+        stored_template.owner.from_arcis(result)
     }
 }
