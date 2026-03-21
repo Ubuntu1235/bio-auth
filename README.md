@@ -1,120 +1,89 @@
-# Structure of this project
+# CipherGate - Decentralized Access Control on Solana
 
-This project is structured pretty similarly to how a regular Solana Anchor project is structured. The main difference lies in there being two places to write code here:
+Encrypted key management, policies, and licensing enforced via Arcium MPC over arbitrary storage (IPFS/S3/Arweave).
 
-- The `programs` dir like usual Anchor programs
-- The `encrypted-ixs` dir for confidential computing instructions
+**Live Demo:** https://cipher-gate.vercel.app
+**Program ID:** [2mytDh5J6gN1BAyrwgGfdrCPHAe6v6BbGTbTDANVQXKP](https://explorer.solana.com/address/2mytDh5J6gN1BAyrwgGfdrCPHAe6v6BbGTbTDANVQXKP?cluster=devnet) (Solana Devnet)
 
-When working with plaintext data, we can edit it inside our program as normal. When working with confidential data though, state transitions take place off-chain using the Arcium network as a co-processor. For this, we then always need two instructions in our program: one that gets called to initialize a confidential computation, and one that gets called when the computation is done and supplies the resulting data. Additionally, since the types and operations in a Solana program and in a confidential computing environment are a bit different, we define the operations themselves in the `encrypted-ixs` dir using our Rust-based framework called Arcis. To link all of this together, we provide a few macros that take care of ensuring the correct accounts and data are passed for the specific initialization and callback functions:
+## The Problem
 
-```rust
-// encrypted-ixs/add_together.rs
+Apps need cryptographic access control without trusted servers. Traditional key management relies on centralized gatekeepers who can be compromised, coerced, or corrupted. Encrypted data on IPFS or S3 is useless without secure, policy-driven key distribution.
 
-use arcis::*;
+## The Solution
 
-#[encrypted]
-mod circuits {
-    use arcis::*;
+CipherGate uses **Arcium MPC** to enforce access policies in encrypted shared state. Keys, policies, metering, and licensing are evaluated inside the MPC network. Decryption key fragments are released only when all conditions pass - no single server or node controls access.
 
-    pub struct InputValues {
-        v1: u8,
-        v2: u8,
-    }
+## How Arcium Enables This
 
-    #[instruction]
-    pub fn add_together(input_ctxt: Enc<Shared, InputValues>) -> Enc<Shared, u16> {
-        let input = input_ctxt.to_arcis();
-        let sum = input.v1 as u16 + input.v2 as u16;
-        input_ctxt.owner.from_arcis(sum)
-    }
-}
+### Step 1: Encrypted Access Request
+The requester encrypts their identity, resource ID, timestamp, and payment amount using Arcium Rescue cipher with x25519 key exchange. The request never exists in plaintext on-chain.
 
-// programs/my_program/src/lib.rs
+### Step 2: Encrypted Policy Evaluation
+Access policies (allowed users, expiry times, minimum payments, revocation status) are encrypted and submitted to Arcium ARX nodes. Using secret sharing, each node sees only random fragments.
 
-use anchor_lang::prelude::*;
-use arcium_anchor::prelude::*;
+### Step 3: MPC Policy Check
+The check_access circuit evaluates all conditions on secret-shared data: user identity match, time-bound validity, payment sufficiency, and revocation status. No single node learns the policies or the request details.
 
-declare_id!("<some ID>");
+### Step 4: Conditional Key Release
+Only if ALL conditions pass, a decryption key fragment is generated and returned encrypted to the requester. If any check fails, no key material is released. The decision is cryptographically enforced.
 
-#[arcium_program]
-pub mod my_program {
-    use super::*;
+## Privacy Guarantees
 
-    pub fn init_add_together_comp_def(ctx: Context<InitAddTogetherCompDef>) -> Result<()> {
-        init_comp_def(ctx.accounts, None, None)?;
-        Ok(())
-    }
+- **Policy secrecy:** Access rules never visible to any single party
+- **Request privacy:** Who accesses what is hidden from MPC nodes
+- **Conditional release:** Key fragments only on full policy match
+- **Revocation support:** Instant access revocation via on-chain flag
+- **Storage agnostic:** Works with IPFS, S3, Arweave, or any storage
+- **Full-threshold security:** ALL ARX nodes must collude to break privacy
 
-    pub fn add_together(
-        ctx: Context<AddTogether>,
-        computation_offset: u64,
-        ciphertext_0: [u8; 32],
-        ciphertext_1: [u8; 32],
-        pubkey: [u8; 32],
-        nonce: u128,
-    ) -> Result<()> {
-        ctx.accounts.sign_pda_account.bump = ctx.bumps.sign_pda_account;
-        let args = ArgBuilder::new()
-            .x25519_pubkey(pubkey)
-            .plaintext_u128(nonce)
-            .encrypted_u8(ciphertext_0)
-            .encrypted_u8(ciphertext_1)
-            .build();
+## Technical Implementation
 
-        queue_computation(
-            ctx.accounts,
-            computation_offset,
-            args,
-            vec![AddTogetherCallback::callback_ix(
-                computation_offset,
-                &ctx.accounts.mxe_account,
-                &[]
-            )?],
-            1,
-            0,
-        )?;
-        Ok(())
-    }
+### Arcis Circuit (encrypted-ixs/src/lib.rs)
+- AccessRequest: requester_id, resource_id, timestamp, payment_amount (all u128)
+- AccessPolicy: resource_id, owner_id, allowed_users[8], expiry_times[8], min_payments[8], policy_count, revoked[8]
+- AccessResult: granted (u8), decryption_key_fragment (u128), policy_index (u8), reason_code (u8)
+- Iterates 8 policy slots checking: user match, expiry, payment, revocation
+- Returns key fragment only when all conditions pass
 
-    #[arcium_callback(encrypted_ix = "add_together")]
-    pub fn add_together_callback(
-        ctx: Context<AddTogetherCallback>,
-        output: SignedComputationOutputs<AddTogetherOutput>,
-    ) -> Result<()> {
-        let o = match output.verify_output(&ctx.accounts.cluster_account, &ctx.accounts.computation_account) {
-            Ok(AddTogetherOutput { field_0 }) => field_0,
-            Err(_) => return Err(ErrorCode::AbortedComputation.into()),
-        };
+### Solana Program (programs/cipher_gate/src/lib.rs)
+- initialize: program state setup
+- register_resource: register encrypted resource with URI and storage type
+- add_policy: add access policy (allowed user, expiry, min payment)
+- revoke_access: instant policy revocation
+- check_access: encrypted policy evaluation via ArgBuilder + queue_computation
+- check_access_callback: verified results via SignedComputationOutputs
+- Custom accounts: ProgramState, Resource, AccessLog
 
-        emit!(SumEvent {
-            sum: o.ciphertexts[0],
-            nonce: o.nonce.to_le_bytes(),
-        });
-        Ok(())
-    }
-}
+### Frontend (app/)
+- React + TypeScript + Vite with Anchor SDK
+- Real on-chain transactions (initialize, register resource)
+- Industrial brutalist UI with monospace typography
+- Resource management with IPFS/S3/Arweave support
+- MPC access check visualization with progress
 
-#[queue_computation_accounts("add_together", payer)]
-#[derive(Accounts)]
-#[instruction(computation_offset: u64)]
-pub struct AddTogether<'info> {
-    #[account(mut)]
-    pub payer: Signer<'info>,
-    // ... other required accounts
-}
+## How to Test
 
-#[callback_accounts("add_together")]
-#[derive(Accounts)]
-pub struct AddTogetherCallback<'info> {
-    // ... required accounts
-    pub some_extra_acc: AccountInfo<'info>,
-}
+1. Install Phantom wallet, switch to Devnet
+2. Get devnet SOL from faucet
+3. Visit https://cipher-gate.vercel.app
+4. Connect wallet
+5. Click INITIALIZE - real Solana devnet transaction
+6. Click + RESOURCE to register an encrypted resource
+7. Select a resource, click REQUEST ACCESS VIA MPC
+8. Watch policy evaluation progress
+9. Verify transactions on Solana Explorer
 
-#[init_computation_definition_accounts("add_together", payer)]
-#[derive(Accounts)]
-pub struct InitAddTogetherCompDef<'info> {
-    #[account(mut)]
-    pub payer: Signer<'info>,
-    // ... other required accounts
-}
-```
+## Deployed on Solana Devnet
+
+- Program: 2mytDh5J6gN1BAyrwgGfdrCPHAe6v6BbGTbTDANVQXKP
+- MXE: Successfully initialized with cluster migration
+- Explorer: https://explorer.solana.com/address/2mytDh5J6gN1BAyrwgGfdrCPHAe6v6BbGTbTDANVQXKP?cluster=devnet
+- Demo: https://cipher-gate.vercel.app
+
+## Tech Stack
+
+Solana - Arcium - Arcis - Anchor 0.32.1 - React + Vite - Phantom
+
+## License
+
+MIT
