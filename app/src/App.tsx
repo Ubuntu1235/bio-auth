@@ -117,7 +117,6 @@ export default function App() {
       const compDefInfo = await connection.getAccountInfo(compDefAddr);
       if (!compDefInfo) {
         const mxeAddr = getMXEAccAddress(PROGRAM_ID);
-        const arciumProg = new Program(await (await fetch("https://api.devnet.solana.com", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({jsonrpc:"2.0",id:1,method:"getAccountInfo",params:[mxeAddr.toString(),{encoding:"jsonParsed"}]})}).then(r=>r.json()).then(()=>IDL) as any, getProvider()!);
         const tx2 = await prog.methods.initVerifyBiometricCompDef().accountsPartial({
           payer: new PublicKey(wallet),
           mxeAccount: mxeAddr,
