@@ -18,7 +18,7 @@ import {
   awaitComputationFinalization,
   deserializeLE,
 } from "@arcium-hq/client";
-import { randomBytes } from "crypto";
+function randomBytes(n: number): Uint8Array { return crypto.getRandomValues(new Uint8Array(n)); }
 
 window.Buffer = Buffer;
 
