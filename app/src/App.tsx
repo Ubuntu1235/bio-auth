@@ -156,7 +156,7 @@ export default function App() {
       const privKey = x25519.utils.randomPrivateKey();
       const pubKey = x25519.getPublicKey(privKey);
       const sharedSecret = x25519.getSharedSecret(privKey, mxePubKey);
-      const cipher = new RescueCipher(Array.from(sharedSecret));
+      const cipher = new RescueCipher(sharedSecret as any);
       const nonce = randomBytes(16);
       setProgress(30);
       setChainMsg("Encrypting biometric data with Rescue cipher...");
