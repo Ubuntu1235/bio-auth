@@ -1,22 +1,20 @@
+// @ts-nocheck
 import { Buffer } from "buffer";
-(window as any).Buffer = Buffer;
+window.Buffer = Buffer;
 
-// Patch crypto.createHash to always return Buffer from digest
 try {
-  const cryptoModule = require("crypto");
-  if (cryptoModule && cryptoModule.createHash) {
-    const orig = cryptoModule.createHash;
-    cryptoModule.createHash = function(alg: string) {
-      const hash = orig.call(cryptoModule, alg);
-      const origDigest = hash.digest.bind(hash);
-      hash.digest = function(...args: any[]) {
-        const result = origDigest(...args);
-        if (result && typeof result !== "string" && !(result instanceof Buffer)) {
-          return Buffer.from(result);
-        }
-        return result;
+  const c = require("crypto");
+  if (c && c.createHash) {
+    const o = c.createHash;
+    c.createHash = function(a) {
+      const h = o.call(c, a);
+      const d = h.digest.bind(h);
+      h.digest = function() {
+        const r = d.apply(this, arguments);
+        if (r && !r.reduce) return Buffer.from(r);
+        return r;
       };
-      return hash;
+      return h;
     };
   }
-} catch (e) {}
+} catch(e) {}
