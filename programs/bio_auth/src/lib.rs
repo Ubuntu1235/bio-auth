@@ -3,7 +3,6 @@ use arcium_anchor::prelude::*;
 use arcium_client::idl::arcium::types::CallbackAccount;
 
 const COMP_DEF_OFFSET_VERIFY_BIOMETRIC: u32 = comp_def_offset("verify_biometric");
-const TEMPLATE_SIZE: usize = 2;
 
 declare_id!("4rfPEFE5wSfqQMG7bw5MqPrwA9KSsYsi5sVaWRsY1ShU");
 
@@ -45,33 +44,27 @@ pub mod bio_auth {
     pub fn verify_biometric(
         ctx: Context<VerifyBiometric>,
         computation_offset: u64,
-        ct_stored_features: [[u8; 32]; TEMPLATE_SIZE],
+        ct_stored_f1: [u8; 32],
+        ct_stored_f2: [u8; 32],
         ct_stored_count: [u8; 32],
-        pub_key_stored: [u8; 32],
-        nonce_stored: u128,
-        ct_live_features: [[u8; 32]; TEMPLATE_SIZE],
+        ct_live_f1: [u8; 32],
+        ct_live_f2: [u8; 32],
         ct_live_count: [u8; 32],
-        pub_key_live: [u8; 32],
-        nonce_live: u128,
+        pub_key: [u8; 32],
+        nonce: u128,
     ) -> Result<()> {
         ctx.accounts.sign_pda_account.bump = ctx.bumps.sign_pda_account;
 
-        let mut builder = ArgBuilder::new()
-            .x25519_pubkey(pub_key_stored)
-            .plaintext_u128(nonce_stored);
-        for i in 0..TEMPLATE_SIZE {
-            builder = builder.encrypted_u128(ct_stored_features[i]);
-        }
-        builder = builder.encrypted_u8(ct_stored_count);
-
-        builder = builder
-            .x25519_pubkey(pub_key_live)
-            .plaintext_u128(nonce_live);
-        for i in 0..TEMPLATE_SIZE {
-            builder = builder.encrypted_u128(ct_live_features[i]);
-        }
-        builder = builder.encrypted_u8(ct_live_count);
-        let args = builder.build();
+        let args = ArgBuilder::new()
+            .x25519_pubkey(pub_key)
+            .plaintext_u128(nonce)
+            .encrypted_u128(ct_stored_f1)
+            .encrypted_u128(ct_stored_f2)
+            .encrypted_u8(ct_stored_count)
+            .encrypted_u128(ct_live_f1)
+            .encrypted_u128(ct_live_f2)
+            .encrypted_u8(ct_live_count)
+            .build();
 
         let auth_log_pda = ctx.accounts.auth_log.key();
         queue_computation(

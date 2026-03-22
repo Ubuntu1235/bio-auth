@@ -26,7 +26,7 @@ const PROGRAM_ID = new PublicKey("4rfPEFE5wSfqQMG7bw5MqPrwA9KSsYsi5sVaWRsY1ShU")
 const DEVNET_RPC = "https://api.devnet.solana.com";
 const connection = new Connection(DEVNET_RPC, "confirmed");
 const CLUSTER_OFFSET = 456;
-const TEMPLATE_SIZE = 2;
+const TEMPLATE_SIZE = 2; // features per template
 
 import IDL from "./idl/bio_auth.json";
 
@@ -148,67 +148,48 @@ export default function App() {
     await new Promise(r => setTimeout(r, 800));
 
     try {
-      // Step 1: Get MXE public key
       setStatus("encrypting"); setProgress(15);
       setChainMsg("Fetching MXE x25519 public key from Solana...");
       const mxePubKey = await getMXEPublicKeyWithRetry(provider, PROGRAM_ID);
       setProgress(20);
-      setChainMsg("MXE public key retrieved. Generating x25519 keypairs...");
 
-      // Step 2: Generate keypairs for stored template encryption
-      const privKeyStored = x25519.utils.randomPrivateKey();
-      const pubKeyStored = x25519.getPublicKey(privKeyStored);
-      const sharedSecretStored = x25519.getSharedSecret(privKeyStored, mxePubKey);
-      const cipherStored = new RescueCipher(sharedSecretStored);
-      const nonceStored = randomBytes(16);
+      const privKey = x25519.utils.randomPrivateKey();
+      const pubKey = x25519.getPublicKey(privKey);
+      const sharedSecret = x25519.getSharedSecret(privKey, mxePubKey);
+      const cipher = new RescueCipher(sharedSecret);
+      const nonce = randomBytes(16);
       setProgress(30);
-      setChainMsg("Encrypting stored template with Rescue cipher...");
+      setChainMsg("Encrypting biometric data with Rescue cipher...");
 
-      // Step 3: Encrypt stored features
-      const ctStoredFeatures: number[][] = [];
-      for (let i = 0; i < TEMPLATE_SIZE; i++) {
-        const ct = cipherStored.encrypt([selected.features[i] || BigInt(0)], nonceStored);
-        ctStoredFeatures.push(Array.from(ct[0]));
-      }
-      const ctStoredCount = Array.from(cipherStored.encrypt([BigInt(selected.features.length)], nonceStored)[0]);
-      setProgress(40);
-      setChainMsg("Stored template encrypted. Encrypting live scan...");
+      const f1 = selected.features[0] || BigInt(1);
+      const f2 = selected.features[1] || BigInt(2);
+      const count = BigInt(selected.features.length);
 
-      // Step 4: Generate keypair for live scan encryption
-      const privKeyLive = x25519.utils.randomPrivateKey();
-      const pubKeyLive = x25519.getPublicKey(privKeyLive);
-      const sharedSecretLive = x25519.getSharedSecret(privKeyLive, mxePubKey);
-      const cipherLive = new RescueCipher(sharedSecretLive);
-      const nonceLive = randomBytes(16);
+      const ctStoredF1 = cipher.encrypt([f1], nonce);
+      const ctStoredF2 = cipher.encrypt([f2], nonce);
+      const ctStoredCount = cipher.encrypt([count], nonce);
+      const ctLiveF1 = cipher.encrypt([f1], nonce);
+      const ctLiveF2 = cipher.encrypt([f2], nonce);
+      const ctLiveCount = cipher.encrypt([count], nonce);
+      setProgress(45);
+      setChainMsg("Data encrypted. Queuing MPC computation on Solana...");
 
-      // Step 5: Encrypt live scan (same features = should match for demo)
-      const ctLiveFeatures: number[][] = [];
-      for (let i = 0; i < TEMPLATE_SIZE; i++) {
-        const ct = cipherLive.encrypt([selected.features[i] || BigInt(0)], nonceLive);
-        ctLiveFeatures.push(Array.from(ct[0]));
-      }
-      const ctLiveCount = Array.from(cipherLive.encrypt([BigInt(selected.features.length)], nonceLive)[0]);
-      setProgress(50);
-      setChainMsg("Both templates encrypted. Queuing MPC computation on Solana...");
-
-      // Step 6: Build computation offset and derive accounts
       const computationOffset = new BN(randomBytes(8), "hex");
       const compDefOffset = Buffer.from(getCompDefAccOffset("verify_biometric")).readUInt32LE();
 
       setStatus("verifying"); setProgress(55);
       setChainMsg("Submitting encrypted data to Arcium MPC via Solana program...");
 
-      // Step 7: Call verify_biometric instruction
       const queueTx = await prog.methods.verifyBiometric(
         computationOffset,
-        ctStoredFeatures,
-        ctStoredCount,
-        Array.from(pubKeyStored),
-        new BN(deserializeLE(nonceStored).toString()),
-        ctLiveFeatures,
-        ctLiveCount,
-        Array.from(pubKeyLive),
-        new BN(deserializeLE(nonceLive).toString()),
+        Array.from(ctStoredF1[0]),
+        Array.from(ctStoredF2[0]),
+        Array.from(ctStoredCount[0]),
+        Array.from(ctLiveF1[0]),
+        Array.from(ctLiveF2[0]),
+        Array.from(ctLiveCount[0]),
+        Array.from(pubKey),
+        new BN(deserializeLE(nonce).toString()),
       ).accountsPartial({
         payer: provider.publicKey,
         mxeAccount: getMXEAccAddress(PROGRAM_ID),
@@ -226,7 +207,6 @@ export default function App() {
       setProgress(65);
       setChainMsg("Computation queued! Tx: " + shorten(queueTx) + ". Waiting for MPC nodes...");
 
-      // Step 8: Wait for MPC computation to finalize
       setProgress(75);
       setChainMsg("ARX nodes processing biometric comparison on secret shares...");
 
@@ -243,7 +223,7 @@ export default function App() {
       setBioGrid(Array(64).fill(0));
       setAuthResult({ match: true, similarity: 100, txSig: finalizeTx });
       setStatus("complete");
-      setChainMsg("MPC computation complete! Verified via callback: " + shorten(finalizeTx));
+      setChainMsg("MPC computation complete! Callback verified: " + shorten(finalizeTx));
 
     } catch (e: any) {
       console.error("Verification error:", e);

@@ -4,11 +4,13 @@ use arcis::*;
 mod circuits {
     use arcis::*;
 
-    const TEMPLATE_SIZE: usize = 2;
-
-    pub struct BiometricTemplate {
-        features: [u128; TEMPLATE_SIZE],
-        count: u8,
+    pub struct VerifyInput {
+        stored_f1: u128,
+        stored_f2: u128,
+        stored_count: u8,
+        live_f1: u128,
+        live_f2: u128,
+        live_count: u8,
     }
 
     pub struct AuthResult {
@@ -19,29 +21,28 @@ mod circuits {
 
     #[instruction]
     pub fn verify_biometric(
-        stored_template: Enc<Shared, BiometricTemplate>,
-        live_scan: Enc<Shared, BiometricTemplate>,
+        input: Enc<Shared, VerifyInput>,
     ) -> Enc<Shared, AuthResult> {
-        let stored = stored_template.to_arcis();
-        let live = live_scan.to_arcis();
+        let d = input.to_arcis();
 
         let mut matched: u8 = 0;
         let mut compared: u8 = 0;
 
-        for i in 0..TEMPLATE_SIZE {
-            let s_valid = (i as u8) < stored.count;
-            let l_valid = (i as u8) < live.count;
-            let both_valid = s_valid && l_valid;
-            let features_match = stored.features[i] == live.features[i];
-            let non_zero = stored.features[i] != 0;
+        let s1_valid = 0 < d.stored_count;
+        let l1_valid = 0 < d.live_count;
+        let both1 = s1_valid && l1_valid;
+        let match1 = d.stored_f1 == d.live_f1;
+        let nz1 = d.stored_f1 != 0;
+        if both1 { compared = compared + 1; }
+        if both1 && match1 && nz1 { matched = matched + 1; }
 
-            if both_valid {
-                compared = compared + 1;
-            }
-            if both_valid && features_match && non_zero {
-                matched = matched + 1;
-            }
-        }
+        let s2_valid = 1 < d.stored_count;
+        let l2_valid = 1 < d.live_count;
+        let both2 = s2_valid && l2_valid;
+        let match2 = d.stored_f2 == d.live_f2;
+        let nz2 = d.stored_f2 != 0;
+        if both2 { compared = compared + 1; }
+        if both2 && match2 && nz2 { matched = matched + 1; }
 
         let similarity: u128 = if compared > 0 {
             (matched as u128) * 10000 / (compared as u128)
@@ -52,12 +53,7 @@ mod circuits {
         let threshold: u128 = 7000;
         let is_match: u8 = if similarity >= threshold { 1 } else { 0 };
 
-        let result = AuthResult {
-            is_match,
-            similarity,
-            compared,
-        };
-
-        stored_template.owner.from_arcis(result)
+        let result = AuthResult { is_match, similarity, compared };
+        input.owner.from_arcis(result)
     }
 }
