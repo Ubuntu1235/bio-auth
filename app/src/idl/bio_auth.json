@@ -315,16 +315,20 @@
           "type": "u64"
         },
         {
-          "name": "ct_stored_features",
+          "name": "ct_stored_f1",
           "type": {
             "array": [
-              {
-                "array": [
-                  "u8",
-                  32
-                ]
-              },
-              8
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "ct_stored_f2",
+          "type": {
+            "array": [
+              "u8",
+              32
             ]
           }
         },
@@ -338,7 +342,7 @@
           }
         },
         {
-          "name": "pub_key_stored",
+          "name": "ct_live_f1",
           "type": {
             "array": [
               "u8",
@@ -347,20 +351,11 @@
           }
         },
         {
-          "name": "nonce_stored",
-          "type": "u128"
-        },
-        {
-          "name": "ct_live_features",
+          "name": "ct_live_f2",
           "type": {
             "array": [
-              {
-                "array": [
-                  "u8",
-                  32
-                ]
-              },
-              8
+              "u8",
+              32
             ]
           }
         },
@@ -374,7 +369,7 @@
           }
         },
         {
-          "name": "pub_key_live",
+          "name": "pub_key",
           "type": {
             "array": [
               "u8",
@@ -383,7 +378,7 @@
           }
         },
         {
-          "name": "nonce_live",
+          "name": "nonce",
           "type": "u128"
         }
       ]
