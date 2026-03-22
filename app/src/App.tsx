@@ -15,6 +15,7 @@ import {
   getFeePoolAccAddress,
   getClockAccAddress,
   getCompDefAccOffset,
+  getArciumProgramId,
   awaitComputationFinalization,
   deserializeLE,
 } from "@arcium-hq/client";
@@ -108,6 +109,27 @@ export default function App() {
       const tx = await prog.methods.initialize().accounts({ authority: new PublicKey(wallet), programState: pda, systemProgram: SystemProgram.programId }).rpc();
       setTxSigs(p => [...p, tx]); setChainMsg("Initialized — " + shorten(tx));
     } catch (e: any) { setChainMsg(e.message?.includes("already in use") ? "Already initialized" : "Error: " + e.message?.slice(0, 60)); }
+    // Init comp def
+    try {
+      setChainMsg("Initializing computation definition...");
+      const compDefOffset = Buffer.from(getCompDefAccOffset("verify_biometric")).readUInt32LE();
+      const compDefAddr = getCompDefAccAddress(PROGRAM_ID, compDefOffset);
+      const compDefInfo = await connection.getAccountInfo(compDefAddr);
+      if (!compDefInfo) {
+        const mxeAddr = getMXEAccAddress(PROGRAM_ID);
+        const arciumProg = new Program(await (await fetch("https://api.devnet.solana.com", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({jsonrpc:"2.0",id:1,method:"getAccountInfo",params:[mxeAddr.toString(),{encoding:"jsonParsed"}]})}).then(r=>r.json()).then(()=>IDL) as any, getProvider()!);
+        const tx2 = await prog.methods.initVerifyBiometricCompDef().accountsPartial({
+          payer: new PublicKey(wallet),
+          mxeAccount: mxeAddr,
+          arciumProgram: getArciumProgramId(),
+          systemProgram: SystemProgram.programId,
+        }).rpc();
+        setTxSigs(p => [...p, tx2]);
+        setChainMsg("Comp def initialized — " + shorten(tx2));
+      } else {
+        setChainMsg("Comp def already initialized");
+      }
+    } catch (e2: any) { setChainMsg("Comp def: " + (e2.message?.includes("already") ? "Already done" : e2.message?.slice(0, 60))); }
   }, [wallet]);
 
   const registerOnChain = useCallback(async () => {
