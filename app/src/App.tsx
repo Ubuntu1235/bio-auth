@@ -116,7 +116,7 @@ export default function App() {
       const [statePda] = PublicKey.findProgramAddressSync([Buffer.from("program_state")], PROGRAM_ID);
       const [identityPda] = PublicKey.findProgramAddressSync([Buffer.from("identity"), new PublicKey(wallet).toBuffer()], PROGRAM_ID);
       const info = await connection.getAccountInfo(identityPda);
-      if (info) { setChainMsg("Identity already registered on-chain"); return; }
+      if (info) { setChainMsg("Identity already registered on-chain"); const features: bigint[] = []; for (let i = 0; i < TEMPLATE_SIZE; i++) features.push(BigInt(Math.floor(Math.random() * 2**32))); setTemplates(p => [...p, { id: p.length + 1, name: newName, type: newType, features, registered: new Date().toISOString().split("T")[0], active: true }]); setShowRegister(false); setNewName(""); return; }
 
       const hash = new Uint8Array(32);
       const raw = newName + wallet + Date.now();
