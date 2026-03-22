@@ -3,7 +3,7 @@ use arcium_anchor::prelude::*;
 use arcium_client::idl::arcium::types::CallbackAccount;
 
 const COMP_DEF_OFFSET_VERIFY_BIOMETRIC: u32 = comp_def_offset("verify_biometric");
-const TEMPLATE_SIZE: usize = 8;
+const TEMPLATE_SIZE: usize = 4;
 
 declare_id!("4rfPEFE5wSfqQMG7bw5MqPrwA9KSsYsi5sVaWRsY1ShU");
 

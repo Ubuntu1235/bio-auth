@@ -4,7 +4,7 @@ use arcis::*;
 mod circuits {
     use arcis::*;
 
-    const TEMPLATE_SIZE: usize = 8;
+    const TEMPLATE_SIZE: usize = 4;
 
     pub struct BiometricTemplate {
         features: [u128; TEMPLATE_SIZE],

@@ -26,7 +26,7 @@ const PROGRAM_ID = new PublicKey("4rfPEFE5wSfqQMG7bw5MqPrwA9KSsYsi5sVaWRsY1ShU")
 const DEVNET_RPC = "https://api.devnet.solana.com";
 const connection = new Connection(DEVNET_RPC, "confirmed");
 const CLUSTER_OFFSET = 456;
-const TEMPLATE_SIZE = 8;
+const TEMPLATE_SIZE = 4;
 
 import IDL from "./idl/bio_auth.json";
 
