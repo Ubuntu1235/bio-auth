@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
 import path from "path";
 
-export default defineConfig({
+export default defineConfig({ base: "/bio-auth/",
   plugins: [
     react(),
     nodePolyfills({
