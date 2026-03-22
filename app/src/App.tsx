@@ -19,6 +19,7 @@ import {
   deserializeLE,
 } from "@arcium-hq/client";
 function randomBytes(n: number): Buffer { return Buffer.from(crypto.getRandomValues(new Uint8Array(n))); }
+function toPlainArray(data: any): number[] { const arr = []; const u8 = new Uint8Array(data instanceof ArrayBuffer ? data : (data.buffer ? data.buffer : data)); for (let i = 0; i < u8.length; i++) arr.push(u8[i]); return arr; }
 
 window.Buffer = Buffer;
 
@@ -165,12 +166,12 @@ export default function App() {
       const f2 = selected.features[1] || BigInt(2);
       const count = BigInt(selected.features.length);
 
-      const ctStoredF1 = cipher.encrypt([f1], nonce); const ctStoredF1Arr = Array.from(new Uint8Array(ctStoredF1[0]));
-      const ctStoredF2 = cipher.encrypt([f2], nonce); const ctStoredF2Arr = Array.from(new Uint8Array(ctStoredF2[0]));
-      const ctStoredCount = cipher.encrypt([count], nonce); const ctStoredCountArr = Array.from(new Uint8Array(ctStoredCount[0]));
-      const ctLiveF1 = cipher.encrypt([f1], nonce); const ctLiveF1Arr = Array.from(new Uint8Array(ctLiveF1[0]));
-      const ctLiveF2 = cipher.encrypt([f2], nonce); const ctLiveF2Arr = Array.from(new Uint8Array(ctLiveF2[0]));
-      const ctLiveCount = cipher.encrypt([count], nonce); const ctLiveCountArr = Array.from(new Uint8Array(ctLiveCount[0]));
+      const ctStoredF1 = cipher.encrypt([f1], nonce); const ctStoredF1Arr = toPlainArray(ctStoredF1[0]);
+      const ctStoredF2 = cipher.encrypt([f2], nonce); const ctStoredF2Arr = toPlainArray(ctStoredF2[0]);
+      const ctStoredCount = cipher.encrypt([count], nonce); const ctStoredCountArr = toPlainArray(ctStoredCount[0]);
+      const ctLiveF1 = cipher.encrypt([f1], nonce); const ctLiveF1Arr = toPlainArray(ctLiveF1[0]);
+      const ctLiveF2 = cipher.encrypt([f2], nonce); const ctLiveF2Arr = toPlainArray(ctLiveF2[0]);
+      const ctLiveCount = cipher.encrypt([count], nonce); const ctLiveCountArr = toPlainArray(ctLiveCount[0]);
       setProgress(45);
       setChainMsg("Data encrypted. Queuing MPC computation on Solana...");
 
@@ -188,7 +189,7 @@ export default function App() {
         ctLiveF1Arr,
         ctLiveF2Arr,
         ctLiveCountArr,
-        Array.from(pubKey),
+        toPlainArray(pubKey),
         new BN(deserializeLE(nonce).toString()),
       ).accountsPartial({
         payer: provider.publicKey,
