@@ -165,12 +165,12 @@ export default function App() {
       const f2 = selected.features[1] || BigInt(2);
       const count = BigInt(selected.features.length);
 
-      const ctStoredF1 = cipher.encrypt([f1], nonce);
-      const ctStoredF2 = cipher.encrypt([f2], nonce);
-      const ctStoredCount = cipher.encrypt([count], nonce);
-      const ctLiveF1 = cipher.encrypt([f1], nonce);
-      const ctLiveF2 = cipher.encrypt([f2], nonce);
-      const ctLiveCount = cipher.encrypt([count], nonce);
+      const ctStoredF1 = cipher.encrypt([f1], nonce); const ctStoredF1Arr = Array.from(new Uint8Array(ctStoredF1[0]));
+      const ctStoredF2 = cipher.encrypt([f2], nonce); const ctStoredF2Arr = Array.from(new Uint8Array(ctStoredF2[0]));
+      const ctStoredCount = cipher.encrypt([count], nonce); const ctStoredCountArr = Array.from(new Uint8Array(ctStoredCount[0]));
+      const ctLiveF1 = cipher.encrypt([f1], nonce); const ctLiveF1Arr = Array.from(new Uint8Array(ctLiveF1[0]));
+      const ctLiveF2 = cipher.encrypt([f2], nonce); const ctLiveF2Arr = Array.from(new Uint8Array(ctLiveF2[0]));
+      const ctLiveCount = cipher.encrypt([count], nonce); const ctLiveCountArr = Array.from(new Uint8Array(ctLiveCount[0]));
       setProgress(45);
       setChainMsg("Data encrypted. Queuing MPC computation on Solana...");
 
@@ -182,12 +182,12 @@ export default function App() {
 
       const queueTx = await prog.methods.verifyBiometric(
         computationOffset,
-        Array.from(ctStoredF1[0]),
-        Array.from(ctStoredF2[0]),
-        Array.from(ctStoredCount[0]),
-        Array.from(ctLiveF1[0]),
-        Array.from(ctLiveF2[0]),
-        Array.from(ctLiveCount[0]),
+        ctStoredF1Arr,
+        ctStoredF2Arr,
+        ctStoredCountArr,
+        ctLiveF1Arr,
+        ctLiveF2Arr,
+        ctLiveCountArr,
         Array.from(pubKey),
         new BN(deserializeLE(nonce).toString()),
       ).accountsPartial({
